@@ -16,6 +16,7 @@ drake_cc_package_library(
     name = "boussinesq_solver",
     deps = [
         ":triangle_area",
+        ":triangle_orientation",
     ],
 )
 
@@ -28,12 +29,29 @@ drake_cc_library(
     ],
 )
 
+drake_cc_library(
+    name = "triangle_orientation",
+    srcs = ["triangle_orientation.cc"],
+    hdrs = ["triangle_orientation.h"],
+    deps = [
+        "//common:essential",
+    ],
+)
+
 # This is a comment.
 
 drake_cc_googletest(
     name = "triangle_area_test",
     deps = [
         ":triangle_area",
+        #        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "triangle_orientation_test",
+    deps = [
+        ":triangle_orientation",
         #        "//common/test_utilities:eigen_matrix_compare",
     ],
 )
