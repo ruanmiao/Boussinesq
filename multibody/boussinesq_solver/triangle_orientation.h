@@ -12,7 +12,7 @@ namespace boussinesq_solver {
 /// @param p1 First vertex.
 /// @param p2 Second vertex.
 /// @param p3 Third vertex.
-/// @returns The are of the triangle defined by p1, p2 and p3.
+/// @returns The orientation of the triangle defined by p1, p2 and p3.
 int TriangleOrientation(const Vector2<double>& p1,
                     const Vector2<double>& p2,
                     const Vector2<double>& p3);
