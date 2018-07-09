@@ -15,43 +15,43 @@ package(
 drake_cc_package_library(
     name = "boussinesq_solver",
     deps = [
+        ":integral_reference_triangle",
+        ":math_helper",
         ":triangle_area",
         ":triangle_orientation",
     ],
 )
 
 drake_cc_library(
-    name = "triangle_area",
-    srcs = ["triangle_area.cc"],
-    hdrs = ["triangle_area.h"],
+    name = "integral_reference_triangle",
+    srcs = ["integral_reference_triangle.cc"],
+    hdrs = ["integral_reference_triangle.h"],
     deps = [
         "//common:essential",
     ],
 )
 
 drake_cc_library(
-    name = "triangle_orientation",
-    srcs = ["triangle_orientation.cc"],
-    hdrs = ["triangle_orientation.h"],
+    name = "math_helper",
+    srcs = ["math_helper.cc"],
+    hdrs = ["math_helper.h"],
     deps = [
         "//common:essential",
     ],
 )
 
-# This is a comment.
-
 drake_cc_googletest(
-    name = "triangle_area_test",
+    name = "integral_reference_triangle_test",
     deps = [
-        ":triangle_area",
+        ":integral_reference_triangle",
         #        "//common/test_utilities:eigen_matrix_compare",
     ],
 )
 
 drake_cc_googletest(
-    name = "triangle_orientation_test",
+    name = "math_helper_test",
     deps = [
-        ":triangle_orientation",
+        ":math_helper",
         #        "//common/test_utilities:eigen_matrix_compare",
     ],
 )
