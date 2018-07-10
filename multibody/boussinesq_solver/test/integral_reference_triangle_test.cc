@@ -74,7 +74,7 @@ GTEST_TEST(IntegralReferenceTriangleTest, P1Origin) {
   Vector3d expected_res;
   // Note: these expected values were previously computed with a prototype in
   // Matlab.
-  expected_res << 0.0,  0.0, 0.0;
+  expected_res << 0.0, 0.0, 0.0;
   EXPECT_TRUE(
       CompareMatrices(
           res,
@@ -82,6 +82,23 @@ GTEST_TEST(IntegralReferenceTriangleTest, P1Origin) {
           10 * std::numeric_limits<double>::epsilon(),
           MatrixCompareType::absolute));
 }
+
+GTEST_TEST(IntegralReferenceTriangleTest, AlignY) {
+  Vector2d p1, p2;
+  p1 << 0.0, 2.0;
+  p2 << 0.0, 1.0;
+
+  Vector3d res = CalcIntegralReferenceTriangle(p1, p2);
+  Vector3d expected_res;
+  expected_res << 0.0, 0.0, 0.0;
+  EXPECT_TRUE(
+      CompareMatrices(
+          res,
+          expected_res,
+          10 * std::numeric_limits<double>::epsilon(),
+          MatrixCompareType::absolute));
+}
+
 }  // namespace
 }  // namespace boussinesq_solver
 }  // namespace multibody

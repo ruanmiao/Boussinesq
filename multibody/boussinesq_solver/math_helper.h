@@ -29,19 +29,24 @@ int TriangleOrientation(const Vector2<double>& p1,
                         const Vector2<double>& p3 = Eigen::MatrixXd::Zero(
                             2, 1));
 
-/// This method the integral of Jmn = int(sin^m * cos^n) in the interval
+/// This method returns the integral of Jmn = int(sin^m * cos^n) in the interval
 /// [theta_0, theta_f], where m = 0, n = -1;
-/// @param theta_0.
-/// @param theta_f.
+/// @param theta_0 Start of the interval.
+/// @param theta_f End of the interval.
 /// @returns the integral Jmn.
 double IntegralJm0nN1(const double& theta_0, const double& theta_f);
 
-/// This method the integral of Jmn = int(sin^m * cos^n) in the interval
+/// This method returns the integral of Jmn = int(sin^m * cos^n) in the interval
 /// [theta_0, theta_f], where m = 1, n = -2;
-/// @param theta_0.
-/// @param theta_f.
+/// @param theta_0 Start of the interval.
+/// @param theta_f End of the interval.
 /// @returns the integral Jmn.
 double IntegralJm1nN2(const double& theta_0, const double& theta_f);
+
+/// This method returns the inverse of a 2x2 matrix
+/// @param matrix to be inversed
+/// @returns the integral Jmn.
+Matrix2<double> InverseMatrix2(Matrix2<double> matrix);
 
 
 }  // namespace boussinesq_solver

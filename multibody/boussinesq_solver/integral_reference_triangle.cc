@@ -20,7 +20,7 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double> &p1,
   const double r1 = p1.norm();
   const double r2 = p2.norm();
 
-  if (r1 == 0.0 || r2 == 0.0) {
+  if (r1 == 0.0 || r2 == 0.0 || signed_theta == 0.0) {
     results << 0.0, 0.0, 0.0;
     return results;
   }
