@@ -17,15 +17,19 @@ drake_cc_package_library(
     deps = [
         ":integral_reference_triangle",
         ":math_helper",
-        ":triangle_area",
-        ":triangle_orientation",
     ],
 )
 
 drake_cc_library(
     name = "integral_reference_triangle",
-    srcs = ["integral_reference_triangle.cc"],
-    hdrs = ["integral_reference_triangle.h"],
+    srcs = [
+        "integral_reference_triangle.cc",
+        "math_helper.cc",
+    ],
+    hdrs = [
+        "integral_reference_triangle.h",
+        "math_helper.h",
+    ],
     deps = [
         "//common:essential",
     ],
@@ -44,7 +48,7 @@ drake_cc_googletest(
     name = "integral_reference_triangle_test",
     deps = [
         ":integral_reference_triangle",
-        #        "//common/test_utilities:eigen_matrix_compare",
+        "//common/test_utilities:eigen_matrix_compare",
     ],
 )
 

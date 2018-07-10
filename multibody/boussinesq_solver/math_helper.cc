@@ -25,6 +25,16 @@ int TriangleOrientation(const Vector2<double>& p1,
   return is_clockwise;
 }
 
+double IntegralJm0nN1(const double &theta_0, const double &theta_f) {
+  double Jmn = log(fabs(1 / cos(theta_f) + tan(theta_f))) -
+      log(fabs(1 / (cos(theta_0)) + tan(theta_0)));
+  return Jmn;
+}
+
+double IntegralJm1nN2(const double &theta_0, const double &theta_f) {
+  double Jmn = 1 / (cos(theta_f)) - 1 / cos(theta_0);
+  return Jmn;
+}
 
 }  // namespace boussinesq_solver
 }  // namespace multibody

@@ -17,7 +17,6 @@ double TriangleArea(const Vector2<double>& p1,
                     const Vector2<double>& p2,
                     const Vector2<double>& p3);
 
-
 /// This method check the orientation of the three points p1, p2, p3. Return 1
 /// if the three points are ordered counter-clockwise. -1 if clockwise. 0 if
 /// the three are co-linear.
@@ -27,7 +26,23 @@ double TriangleArea(const Vector2<double>& p1,
 /// @returns The orientation of the triangle defined by p1, p2 and p3.
 int TriangleOrientation(const Vector2<double>& p1,
                         const Vector2<double>& p2,
-                        const Vector2<double>& p3);
+                        const Vector2<double>& p3 = Eigen::MatrixXd::Zero(
+                            2, 1));
+
+/// This method the integral of Jmn = int(sin^m * cos^n) in the interval
+/// [theta_0, theta_f], where m = 0, n = -1;
+/// @param theta_0.
+/// @param theta_f.
+/// @returns the integral Jmn.
+double IntegralJm0nN1(const double& theta_0, const double& theta_f);
+
+/// This method the integral of Jmn = int(sin^m * cos^n) in the interval
+/// [theta_0, theta_f], where m = 1, n = -2;
+/// @param theta_0.
+/// @param theta_f.
+/// @returns the integral Jmn.
+double IntegralJm1nN2(const double& theta_0, const double& theta_f);
+
 
 }  // namespace boussinesq_solver
 }  // namespace multibody
