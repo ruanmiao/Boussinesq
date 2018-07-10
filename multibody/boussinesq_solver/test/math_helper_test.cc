@@ -1,7 +1,8 @@
+#include "drake/multibody/boussinesq_solver/math_helper.h"
+
 #include <gtest/gtest.h>
 
 #include "drake/common/eigen_types.h"
-#include "drake/multibody/boussinesq_solver/math_helper.h"
 
 namespace drake {
 namespace multibody {

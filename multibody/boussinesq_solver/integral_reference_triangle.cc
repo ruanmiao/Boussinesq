@@ -1,4 +1,5 @@
 #include "drake/multibody/boussinesq_solver/integral_reference_triangle.h"
+
 #include "drake/multibody/boussinesq_solver/math_helper.h"
 
 namespace drake {
@@ -18,6 +19,11 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double> &p1,
   const double psi_offset_from_x = atan2(p1(1), p1(0));
   const double r1 = p1.norm();
   const double r2 = p2.norm();
+
+  if (r1 == 0.0 || r2 == 0.0) {
+    results << 0.0, 0.0, 0.0;
+    return results;
+  }
 
   const double a = (r2 * cos(signed_theta) - r1) / (r2 * sin(signed_theta));
   const double beta = sqrt(r1 * r1 / (1 + a * a));
