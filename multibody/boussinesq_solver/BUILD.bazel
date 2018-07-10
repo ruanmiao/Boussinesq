@@ -56,7 +56,6 @@ drake_cc_googletest(
     name = "math_helper_test",
     deps = [
         ":math_helper",
-        #        "//common/test_utilities:eigen_matrix_compare",
     ],
 )
 
