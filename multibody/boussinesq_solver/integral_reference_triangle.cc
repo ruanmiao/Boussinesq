@@ -1,28 +1,35 @@
 #include "drake/multibody/boussinesq_solver/integral_reference_triangle.h"
 
+#include <limits>
+
 #include "drake/multibody/boussinesq_solver/math_helper.h"
 
 namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
 
-Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double> &p1,
-                                              const Vector2<double> &p2,
-                                              const double zA) {
+Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
+                                              const Vector2<double>& p2,
+                                              double zA) {
   (void) zA;
   Vector3<double> results;
-
-  const double signed_theta =
-      acos(p1.dot(p2) / (p1.norm() * p2.norm())) *
-      TriangleOrientation(p1, p2);
 
   const double psi_offset_from_x = atan2(p1(1), p1(0));
   const double r1 = p1.norm();
   const double r2 = p2.norm();
 
-  if (r1 == 0.0 || r2 == 0.0 || signed_theta == 0.0) {
-    results << 0.0, 0.0, 0.0;
-    return results;
+  const double kTolerance = 10 * std::numeric_limits<double>::epsilon();
+  if (r1 < kTolerance || r2 < kTolerance) {
+    return Vector3<double>::Zero();
+  }
+
+  const Eigen::MatrixXd origin = Eigen::MatrixXd::Zero(2, 1);
+  const double signed_theta =
+      acos(p1.dot(p2) / (p1.norm() * p2.norm())) *
+          CalcTriangleOrientation(p1, p2, origin);
+
+  if (fabs(signed_theta) < kTolerance) {
+    return Vector3<double>::Zero();
   }
 
   const double a = (r2 * cos(signed_theta) - r1) / (r2 * sin(signed_theta));
@@ -32,21 +39,22 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double> &p1,
   const double theta_0 = phi_integral_offset;
   const double theta_f = phi_integral_offset + signed_theta;
 
-  Matrix2<double> rot_phi;
-  rot_phi << cos(phi_integral_offset), sin(phi_integral_offset),
+  Matrix2<double> rotation_matrix_phi;
+  rotation_matrix_phi << cos(phi_integral_offset), sin(phi_integral_offset),
              -sin(phi_integral_offset), cos(phi_integral_offset);
 
-  Matrix2<double> rot_psi;
-  rot_psi << cos(psi_offset_from_x), -sin(psi_offset_from_x),
+  Matrix2<double> rotation_matrix_psi;
+  rotation_matrix_psi << cos(psi_offset_from_x), -sin(psi_offset_from_x),
              sin(psi_offset_from_x), cos(psi_offset_from_x);
 
-  Vector2<double> I_tobe_rotated;
-  I_tobe_rotated <<
-                 IntegralJm0nN1(theta_0, theta_f),
-                 IntegralJm1nN2(theta_0, theta_f);
+  Vector2<double> integral_without_rotation;
+  integral_without_rotation <<
+                            CalcIntegralJm0nN1(theta_0, theta_f),
+      CalcIntegralJm1nN2(theta_0, theta_f);
 
-  results.head(2) = beta * beta / 2 * rot_psi * rot_phi * I_tobe_rotated;
-  results(2) = beta * IntegralJm0nN1(theta_0, theta_f);
+  results.head(2) = beta * beta /
+      2 * rotation_matrix_psi * rotation_matrix_phi * integral_without_rotation;
+  results(2) = beta * CalcIntegralJm0nN1(theta_0, theta_f);
 
   return results;
 }
