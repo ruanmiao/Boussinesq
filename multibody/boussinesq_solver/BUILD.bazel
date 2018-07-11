@@ -15,9 +15,30 @@ package(
 drake_cc_package_library(
     name = "boussinesq_solver",
     deps = [
+        ":element_compliance_matrix",
         ":integral_general_triangle",
         ":integral_reference_triangle",
         ":math_helper",
+        ":test_helper",
+    ],
+)
+
+drake_cc_library(
+    name = "element_compliance_matrix",
+    srcs = [
+        "element_compliance_matrix.cc",
+        "integral_general_triangle.cc",
+        "integral_reference_triangle.cc",
+        "math_helper.cc",
+    ],
+    hdrs = [
+        "element_compliance_matrix.h",
+        "integral_general_triangle.h",
+        "integral_reference_triangle.h",
+        "math_helper.h",
+    ],
+    deps = [
+        "//common:essential",
     ],
 )
 
@@ -59,6 +80,24 @@ drake_cc_library(
     hdrs = ["math_helper.h"],
     deps = [
         "//common:essential",
+    ],
+)
+
+drake_cc_library(
+    name = "test_helper",
+    srcs = ["test_helper.cc"],
+    hdrs = ["test_helper.h"],
+    deps = [
+        "//common:essential",
+    ],
+)
+
+drake_cc_googletest(
+    name = "element_compliance_matrix_test",
+    deps = [
+        ":element_compliance_matrix",
+        ":test_helper",
+        "//common/test_utilities:eigen_matrix_compare",
     ],
 )
 
