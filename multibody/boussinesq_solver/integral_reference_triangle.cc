@@ -41,15 +41,14 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
 
   Matrix2<double> rotation_matrix_phi;
   rotation_matrix_phi << cos(phi_integral_offset), sin(phi_integral_offset),
-             -sin(phi_integral_offset), cos(phi_integral_offset);
+      -sin(phi_integral_offset), cos(phi_integral_offset);
 
   Matrix2<double> rotation_matrix_psi;
   rotation_matrix_psi << cos(psi_offset_from_x), -sin(psi_offset_from_x),
-             sin(psi_offset_from_x), cos(psi_offset_from_x);
+      sin(psi_offset_from_x), cos(psi_offset_from_x);
 
   Vector2<double> integral_without_rotation;
-  integral_without_rotation <<
-                            CalcIntegralJm0nN1(theta_0, theta_f),
+  integral_without_rotation << CalcIntegralJm0nN1(theta_0, theta_f),
       CalcIntegralJm1nN2(theta_0, theta_f);
 
   results.head(2) = beta * beta /

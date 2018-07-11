@@ -7,10 +7,11 @@ namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
 
-MatrixX<double> CalcElementComplianceRowMatrix(const std::vector<Eigen::Vector3d> &points_in_mesh,
-                                               const std::vector<Eigen::Vector3i> &triangles_in_mesh,
-                                               const Vector3<double> &node_A,
-                                               const double &k_const) {
+MatrixX<double> CalcElementComplianceRowMatrix(
+    const std::vector<Eigen::Vector3d>& points_in_mesh,
+    const std::vector<Eigen::Vector3i>& triangles_in_mesh,
+    const Vector3<double> &node_A,
+    double k_const) {
   const size_t num_nodes = points_in_mesh.size();
   const size_t num_tris = triangles_in_mesh.size();
   MatrixX<double> compliance = MatrixX<double>::Zero(1, num_nodes);

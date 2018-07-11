@@ -13,8 +13,8 @@ namespace boussinesq_solver {
 /// @param p1 First vertex.
 /// @param p2 Second vertex.
 /// @param zA The signed distance from xA to the plane of the triangle .
-/// TODO(mengyao-ruan): currently zA is not used. We will update this
-/// implementation for general 3D meshes out of the plane.
+// TODO(mengyao-ruan): currently zA is not used. We will update this
+// implementation for general 3D meshes out of the plane.
 /// @returns V(0), V(1), and V(2) each storing one integral result for : x/R,
 /// y/R, and 1/R, in that order. If p1, p2 and O are in counter-clockwise order,
 /// the last integral on 1/R, V(2), is positive. Otherwise V(2) is negative.

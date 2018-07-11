@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "drake/common/eigen_types.h"
 
 namespace drake {
@@ -20,7 +22,7 @@ MatrixX<double> CalcElementComplianceRowMatrix(
     const std::vector<Eigen::Vector3d>& points_in_mesh,
     const std::vector<Eigen::Vector3i>& triangles_in_mesh,
     const Vector3<double>& node_A,
-    const double& k_const = 1);
+    double k_const = 1);
 
 
 }  // namespace boussinesq_solver
