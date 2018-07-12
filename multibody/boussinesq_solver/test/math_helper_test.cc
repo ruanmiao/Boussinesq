@@ -58,7 +58,7 @@ GTEST_TEST(TriangleAreaTest, AreaSign) {
 GTEST_TEST(IntegralJm0nN1Test, PosToNeg) {
   const double theta_0 = M_PI / 3;
   const double theta_f = -M_PI / 3;
-  const double Jmn = CalcIntegralJm0nN1(theta_0, theta_f);
+  const double Jmn = CalcIntegralJ0minus1(theta_0, theta_f);
   const double expected_Jmn = -2.633915793849633;
   EXPECT_NEAR(Jmn, expected_Jmn, 10 * std::numeric_limits<double>::epsilon());
 }
@@ -69,7 +69,7 @@ GTEST_TEST(IntegralJm0nN1Test, PosToNeg) {
 GTEST_TEST(IntegralJm0nN1Test, PiOverTwo) {
   const double theta_0 = M_PI / 2;
   const double theta_f = 0;
-  const double Jmn = CalcIntegralJm0nN1(theta_0, theta_f);
+  const double Jmn = CalcIntegralJ0minus1(theta_0, theta_f);
   const double expected_Jmn = -38.025003373828866;
   EXPECT_NEAR(Jmn, expected_Jmn, 10 * std::numeric_limits<double>::epsilon());
 }
@@ -80,7 +80,7 @@ GTEST_TEST(IntegralJm0nN1Test, PiOverTwo) {
 GTEST_TEST(IntegralJm1nN2Test, PosToNeg) {
   const double theta_0 = M_PI / 3;
   const double theta_f = -M_PI / 3;
-  const double Jmn = CalcIntegralJm1nN2(theta_0, theta_f);
+  const double Jmn = CalcIntegralJ1minus2(theta_0, theta_f);
   const double expected_Jmn = 0;
   EXPECT_NEAR(Jmn, expected_Jmn, 10 * std::numeric_limits<double>::epsilon());
 }
@@ -91,7 +91,7 @@ GTEST_TEST(IntegralJm1nN2Test, PosToNeg) {
 GTEST_TEST(IntegralJm1nN2Test, PiOverTwo) {
   const double theta_0 = M_PI / 2;
   const double theta_f = 0;
-  const double Jmn = CalcIntegralJm1nN2(theta_0, theta_f);
+  const double Jmn = CalcIntegralJ1minus2(theta_0, theta_f);
   const double expected_Jmn = -1.633123935319537e+16;
   EXPECT_NEAR(
       Jmn, expected_Jmn, 10e+16 * std::numeric_limits<double>::epsilon());

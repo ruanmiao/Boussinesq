@@ -32,15 +32,15 @@ int CalcTriangleOrientation(const Vector2<double>& p1,
 /// in the interval x ∈ [θ₀, θf], where m = 0, n = -1;
 /// @param theta_0.
 /// @param theta_f.
-/// @returns the integral Jmn.
-double CalcIntegralJm0nN1(double theta_0, double theta_f);
+/// @returns the integral Jmn, where m = 0, n = -1.
+double CalcIntegralJ0minus1(double theta_0, double theta_f);
 
 /// This method returns the integral of Jₘₙ =∫ sinᵐ x cosⁿ x dx
 /// in the interval x ∈ [θ₀, θf], where m = 1, n = -2;
 /// @param theta_0.
 /// @param theta_f.
-/// @returns the integral Jmn.
-double CalcIntegralJm1nN2(double theta_0, double theta_f);
+/// @returns the integral Jmn. where m = 1, n = -2.
+double CalcIntegralJ1minus2(double theta_0, double theta_f);
 
 /// This method returns the inverse of a 2x2 matrix
 /// @param matrix to be inversed
