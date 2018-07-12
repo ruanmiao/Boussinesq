@@ -8,6 +8,27 @@ namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
 
+// Reference: M. Carley, Potential Integrals on Triangles, arXiv:1201.4938v1,
+// [math.NA], 24 Jan 2012.
+// Notes: The integral of the integrants below over the triangle surrounded
+// by O, p₁, p₂, where O is the origin.
+// results(0) =  ∫∫ (x/R) dxdy
+// results(1) =  ∫∫ (y/R) dxdy
+// results(2) =  ∫∫ (1/R) dxdy
+// results(0) = Rot(ψ) Rot(-φ) [∫∫ (r*cos(τ + φ)/R) r dr dτ]
+// results(1)                 [∫∫ (r*sin(τ + φ)/R) r dr dτ]
+// The interval of the above integration is [τ ∈ [θ₀, θf]],
+// where θ₀ = φ, θf = φ + Θ, r₁ = ||p₁||, r₂ = ||p₂||,
+// a = (r₂ * cos(Θ) - r₁) / (r₂ * sin(Θ))
+// φ = atan(a), ψ = atan2(yₚ₂, xₚ₁)
+// β = √{r₁²/(1+a²)}
+// Θ is the signed angle from Op₁ to Op₂.
+//
+// The results of ∫∫ (r*cos(τ + φ)/R) r dr dτ, ∫∫ (r*sin(τ + φ)/R) r dr dτ,
+// and ∫∫ (1/R) r dr dτ can be looked up from Table 1 and Table 4 in the
+// reference paper.
+// Special note: the value of Jmn when m = 0, n = -1 is wrong in Table 4. It
+// should be -1/a ln|secθ + tanθ| instead.
 Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
                                               const Vector2<double>& p2,
                                               double zA) {
@@ -49,12 +70,12 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
 
   Vector2<double> integral_without_rotation;
   integral_without_rotation <<
-                            CalcIntegralJm0nN1(theta_0, theta_f),
-      CalcIntegralJm1nN2(theta_0, theta_f);
+                            CalcIntegralJ0minus1(theta_0, theta_f),
+      CalcIntegralJ1minus2(theta_0, theta_f);
 
   results.head(2) = beta * beta /
       2 * rotation_matrix_psi * rotation_matrix_phi * integral_without_rotation;
-  results(2) = beta * CalcIntegralJm0nN1(theta_0, theta_f);
+  results(2) = beta * CalcIntegralJ0minus1(theta_0, theta_f);
 
   return results;
 }
