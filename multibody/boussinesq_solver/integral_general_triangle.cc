@@ -7,10 +7,10 @@ namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
 
-Vector3<double> CalGenralTriangleCompliance(const Vector2<double> &p1,
-                                            const Vector2<double> &p2,
-                                            const Vector2<double> &p3,
-                                            const double k_const) {
+Vector3<double> CalGenralTriangleCompliance(const Vector2<double>& p1,
+                                            const Vector2<double>& p2,
+                                            const Vector2<double>& p3,
+                                            double k_const) {
   const int is_counter_cw = CalcTriangleOrientation(p1, p2, p3);
 
   const Vector3<double>& I_12 = CalcIntegralReferenceTriangle(p1, p2);
