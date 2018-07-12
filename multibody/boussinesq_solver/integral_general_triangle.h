@@ -23,7 +23,7 @@ Vector3<double> CalGenralTriangleCompliance(
     const Vector2<double>& p1,
     const Vector2<double>& p2,
     const Vector2<double>& p3,
-    const double k_const = 1);
+    double k_const = 1);
 
 
 }  // namespace boussinesq_solver
