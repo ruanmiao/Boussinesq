@@ -15,11 +15,33 @@ package(
 drake_cc_package_library(
     name = "boussinesq_solver",
     deps = [
+        ":compliance_matrix",
         ":element_compliance_matrix",
         ":integral_general_triangle",
         ":integral_reference_triangle",
         ":math_helper",
         ":test_helper",
+    ],
+)
+
+drake_cc_library(
+    name = "compliance_matrix",
+    srcs = [
+        "compliance_matrix.cc",
+        "element_compliance_matrix.cc",
+        "integral_general_triangle.cc",
+        "integral_reference_triangle.cc",
+        "math_helper.cc",
+    ],
+    hdrs = [
+        "compliance_matrix.h",
+        "element_compliance_matrix.h",
+        "integral_general_triangle.h",
+        "integral_reference_triangle.h",
+        "math_helper.h",
+    ],
+    deps = [
+        "//common:essential",
     ],
 )
 
