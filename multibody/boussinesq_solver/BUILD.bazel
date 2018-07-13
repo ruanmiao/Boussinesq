@@ -124,4 +124,12 @@ drake_cc_googletest(
     ],
 )
 
+drake_cc_googletest(
+    name = "test_helper_test",
+    deps = [
+        ":test_helper",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
 add_lint_tests()

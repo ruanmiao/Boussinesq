@@ -28,13 +28,19 @@ MeshSquare(
   const Vector2<double>& p3, int num_px = 2, int num_py = 2);
 
 /// Return the pressure on each node given the points locations, where the
-/// pressure field function is p(x) = r.
-/// @param points_in_mesh: Locations of all points in the mesh
-/// @returns The first vector in the return is the location of all nodes in
-/// the mesh. The second vector in the return is the node indexes of all the
-/// triangles in the mesh.
+/// pressure field function is p(pᵢ) = rᵢ.
+/// @param points_in_mesh: Locations of all nodes in the mesh
+/// @returns The pressures for all the nodes in the mesh
 Eigen::VectorXd GetPressureIntegrandR(
     const std::vector<Eigen::Vector3d>& points_in_mesh);
+
+/// Return the pressure on each node given the points locations, where the
+/// pressure field function is p(pᵢ) = xᵢ.
+/// @param points_in_mesh: Locations of all nodes in the mesh
+/// @returns The pressures for all the nodes in the mesh
+Eigen::VectorXd GetPressureIntegrandX(
+    const std::vector<Eigen::Vector3d>& points_in_mesh);
+
 
 }  // namespace boussinesq_solver
 }  // namespace multibody

@@ -53,6 +53,17 @@ Eigen::VectorXd GetPressureIntegrandR(
   return pressures;
 }
 
+Eigen::VectorXd GetPressureIntegrandX(
+    const std::vector<Eigen::Vector3d>& points_in_mesh) {
+  const int num_nodes = points_in_mesh.size();
+  Eigen::VectorXd pressures(num_nodes);
+
+  for (int i_node = 0; i_node < num_nodes; i_node++) {
+    const Vector3<double> pos = points_in_mesh[i_node];
+    pressures(i_node, 0) = pos(0);
+  }
+  return pressures;
+}
 
 }  // namespace boussinesq_solver
 }  // namespace multibody

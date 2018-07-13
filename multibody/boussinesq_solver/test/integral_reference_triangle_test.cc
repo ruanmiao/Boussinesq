@@ -13,6 +13,9 @@ namespace {
 using Eigen::Vector2d;
 using Eigen::Vector3d;
 
+/// The expected values for this files are the results by running Matlab. The
+/// precision (15 digits) of the expected values if the same as the "long"
+/// in Matlab
 GTEST_TEST(IntegralReferenceTriangleTest, CoLinear) {
   Vector2d p1, p2;
   p1 << 1.0, 0.0;
