@@ -41,6 +41,90 @@ MeshSquare(
   return std::make_pair(points, triangles);
 }
 
+std::pair<std::vector<Eigen::Vector3d>,
+          std::vector<Eigen::Vector3i>> MeshCircle(
+              const Vector2<double>& o, double radius, int num_pr) {
+
+  const int num_nodes = 3 * num_pr * (num_pr - 1) + 1;
+  const int num_tris = 6 * (num_pr - 1) * (num_pr - 1);
+
+  std::vector<Vector3<double>> points(num_nodes);
+  std::vector<Vector3<int>> triangles(num_tris);
+
+  const VectorX<double>& r_positions =
+      VectorX<double>::LinSpaced(num_pr, 0, radius);
+  const VectorX<double>& theta_positions =
+      VectorX<double>::LinSpaced(7, 0, 2 * M_PI);
+
+  int cur_p = 0;
+  int cur_t = 0;
+
+  points[cur_p] << o(0), o(1), 0;
+  cur_p ++;
+
+  for (int ir = 1; ir < num_pr; ir++) {
+    for (int itheta = 0; itheta < 6; itheta++) {
+
+      int ipos = 0;
+      const double r = r_positions(ir);
+
+      const VectorX<double>& p_positions = VectorX<double>::LinSpaced(
+              ir + 1, theta_positions(itheta), theta_positions(itheta + 1));
+
+      assert(cur_t < num_tris);
+      const Vector3<int> tri(
+          FindIndexInMeshCircle(ir, itheta, ipos),
+          FindIndexInMeshCircle(ir, itheta, ipos+1),
+          FindIndexInMeshCircle(ir-1, itheta, ipos));
+      triangles[cur_t] = tri;
+      cur_t ++;
+
+      const Vector3<double> pos0(
+          o(0) + r * cos(p_positions(0)),
+          o(1) + r * sin(p_positions(0)), 0);
+      assert(cur_p < num_nodes);
+      points[cur_p] = pos0;
+      cur_p ++;
+
+      for (ipos = 1; ipos < ir; ipos ++) {
+
+        assert(cur_t < num_tris);
+        const Vector3<int> tri1(
+            FindIndexInMeshCircle(ir, itheta, ipos),
+            FindIndexInMeshCircle(ir - 1, itheta, ipos - 1),
+            FindIndexInMeshCircle(ir - 1, itheta, ipos));
+        triangles[cur_t] = tri1;
+        cur_t ++;
+
+        assert(cur_t < num_tris);
+        const Vector3<int> tri2(
+            FindIndexInMeshCircle(ir, itheta, ipos),
+            FindIndexInMeshCircle(ir, itheta, ipos + 1),
+            FindIndexInMeshCircle(ir - 1, itheta, ipos));
+        triangles[cur_t] = tri2;
+        cur_t ++;
+
+        const Vector3<double> pos(
+            o(0) + r * cos(p_positions(ipos)),
+            o(1) + r * sin(p_positions(ipos)), 0);
+
+        assert(cur_p < num_nodes);
+        points[cur_p] = pos;
+        cur_p ++;
+      }
+    }
+  }
+  return std::make_pair(points, triangles);
+}
+
+int FindIndexInMeshCircle(int ir, int itheta, int ipos) {
+  const int layer_max = 3 * ir * (ir + 1) + 1;
+  if (ir == 0) return 0;
+  int index = 1 + 3 * ir * (ir - 1) + itheta * ir + ipos;
+  if (index < layer_max) return  index;
+  return index - ir * 6;
+}
+
 Eigen::VectorXd GetPressureIntegrandR(
     const std::vector<Eigen::Vector3d>& points_in_mesh) {
   const int num_nodes = points_in_mesh.size();
