@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+
 #include "drake/multibody/boussinesq_solver/math_helper.h"
 
 namespace drake {
@@ -49,7 +50,6 @@ MeshSquare(
 std::pair<std::vector<Eigen::Vector3d>,
           std::vector<Eigen::Vector3i>> MeshCircle(
               const Vector2<double>& o, double radius, int num_pr) {
-
   const int num_nodes = 3 * num_pr * (num_pr - 1) + 1;
   const int num_tris = 6 * (num_pr - 1) * (num_pr - 1);
 
@@ -65,11 +65,10 @@ std::pair<std::vector<Eigen::Vector3d>,
   int cur_t = 0;
 
   points[cur_p] << o(0), o(1), 0;
-  cur_p ++;
+  cur_p++;
 
   for (int ir = 1; ir < num_pr; ir++) {
     for (int itheta = 0; itheta < 6; itheta++) {
-
       int ipos = 0;
       const double r = r_positions(ir);
 
@@ -82,24 +81,23 @@ std::pair<std::vector<Eigen::Vector3d>,
           FindIndexInMeshCircle(ir-1, itheta, ipos),
           FindIndexInMeshCircle(ir, itheta, ipos+1));
       triangles[cur_t] = tri;
-      cur_t ++;
+      cur_t++;
 
       const Vector3<double> pos0(
           o(0) + r * cos(p_positions(0)),
           o(1) + r * sin(p_positions(0)), 0);
       assert(cur_p < num_nodes);
       points[cur_p] = pos0;
-      cur_p ++;
+      cur_p++;
 
-      for (ipos = 1; ipos < ir; ipos ++) {
-
+      for (ipos = 1; ipos < ir; ipos++) {
         assert(cur_t < num_tris);
         const Vector3<int> tri1(
             FindIndexInMeshCircle(ir, itheta, ipos),
             FindIndexInMeshCircle(ir - 1, itheta, ipos - 1),
             FindIndexInMeshCircle(ir - 1, itheta, ipos));
         triangles[cur_t] = tri1;
-        cur_t ++;
+        cur_t++;
 
         assert(cur_t < num_tris);
         const Vector3<int> tri2(
@@ -108,7 +106,7 @@ std::pair<std::vector<Eigen::Vector3d>,
             FindIndexInMeshCircle(ir, itheta, ipos + 1));
 
             triangles[cur_t] = tri2;
-        cur_t ++;
+        cur_t++;
 
         const Vector3<double> pos(
             o(0) + r * cos(p_positions(ipos)),
@@ -116,7 +114,7 @@ std::pair<std::vector<Eigen::Vector3d>,
 
         assert(cur_p < num_nodes);
         points[cur_p] = pos;
-        cur_p ++;
+        cur_p++;
       }
     }
   }
@@ -198,7 +196,8 @@ bool OutputMeshToVTK(const std::vector<Vector3<double>>& points_in_mesh,
         std::clog << "CELLS " << num_tris << " " << 8 << std::endl;
         for (int i_tri = 0; i_tri < num_tris; i_tri++) {
           const Vector3<int> tri = triangles_in_mesh[i_tri];
-          std::clog << "3 " << tri[0] << " " << tri[1] << " " << tri[2] << std::endl;
+          std::clog << "3 " << tri[0] << " " << tri[1]
+                    << " " << tri[2] << std::endl;
         }
 
         std::clog << std::endl;

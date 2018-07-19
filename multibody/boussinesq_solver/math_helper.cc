@@ -1,5 +1,7 @@
 #include "drake/multibody/boussinesq_solver/math_helper.h"
 
+#include <limits>
+
 namespace drake {
 namespace multibody {
 namespace boussinesq_solver {

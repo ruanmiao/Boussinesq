@@ -60,7 +60,7 @@ GTEST_TEST(MeshCircle, NumPerR3) {
                 14, 15, 5, 15, 5, 6, 15, 16, 6,
                 16, 17, 6, 17, 6, 7, 17, 18, 7,
                 18, 19, 7, 19, 7, 2, 19, 8, 2;
-  MatrixX<int> expected = expected_M - MatrixX<int>::Ones(24,3);
+  MatrixX<int> expected = expected_M - MatrixX<int>::Ones(24, 3);
   std::vector<Eigen::Vector3i> tri_vectors = mesh_data.second;
   MatrixX<int> results(24, 3);
   for (int it = 0; it < 24; it++) {

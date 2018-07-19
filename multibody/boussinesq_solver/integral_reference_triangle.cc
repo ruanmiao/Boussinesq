@@ -45,7 +45,8 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
   }
 
   const Eigen::MatrixXd origin = Eigen::MatrixXd::Zero(2, 1);
-  const double dot_product = (p1(0) * p2(0) + p1(1) * p2(1)) / (p1.norm() * p2.norm());
+  const double dot_product =
+      (p1(0) * p2(0) + p1(1) * p2(1)) / (p1.norm() * p2.norm());
 
   double a_signed_theta = acos(dot_product);
   if (dot_product > 1.0 || dot_product < -1.0) a_signed_theta = 0;

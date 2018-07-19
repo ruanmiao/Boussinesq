@@ -64,8 +64,6 @@ GTEST_TEST(ComplianceMatrixTest, ShpereContact) {
   EXPECT_NEAR(total_force, expected_force, 10 * 1e-8);
   EXPECT_GT(moby_LCP_solver.get_num_pivots(), 0);
   EXPECT_TRUE(solved);
-
-
 }
 
 
