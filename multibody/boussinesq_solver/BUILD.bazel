@@ -107,10 +107,26 @@ drake_cc_library(
 
 drake_cc_library(
     name = "test_helper",
-    srcs = ["test_helper.cc"],
-    hdrs = ["test_helper.h"],
+    srcs = [
+        "math_helper.cc",
+        "test_helper.cc",
+    ],
+    hdrs = [
+        "math_helper.h",
+        "test_helper.h",
+    ],
     deps = [
         "//common:essential",
+    ],
+)
+
+drake_cc_googletest(
+    name = "compliance_matrix_test",
+    deps = [
+        ":compliance_matrix",
+        ":test_helper",
+        "//common/test_utilities:eigen_matrix_compare",
+        "//solvers:moby_lcp_solver",
     ],
 )
 

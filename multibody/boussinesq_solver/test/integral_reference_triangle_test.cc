@@ -102,6 +102,23 @@ GTEST_TEST(IntegralReferenceTriangleTest, AlignY) {
           MatrixCompareType::absolute));
 }
 
+GTEST_TEST(SplitedGeneralTriangleTest, ColinearOndEdgep1p2) {
+  Vector2d p1, p2;
+  const double r = 1.0;
+  p1 << r / 2 * cos(M_PI * 2 / 3), r / 2 * sin(M_PI * 2 / 3);
+  p2 << r * cos(M_PI * 2 / 3), r * sin(M_PI * 2 / 3);
+
+  Vector3d res = CalcIntegralReferenceTriangle(p1, -p2);
+  Vector3d expected_res;
+  expected_res << 0.0, 0.0, 0.0;
+  EXPECT_TRUE(
+      CompareMatrices(
+          res,
+          expected_res,
+          10 * std::numeric_limits<double>::epsilon(),
+          MatrixCompareType::absolute));
+}
+
 }  // namespace
 }  // namespace boussinesq_solver
 }  // namespace multibody

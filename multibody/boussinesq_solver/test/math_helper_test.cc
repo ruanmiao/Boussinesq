@@ -35,6 +35,16 @@ GTEST_TEST(TriangleOrientationTest, CounterClockWise) {
   EXPECT_EQ(orientation, 1);
 }
 
+GTEST_TEST(TriangleOrientationTest, Colinear2over3PI) {
+  Vector2d p1, p2, p3;
+  const double r = 1.0;
+  p1 << r / 2 * cos(M_PI * 2 / 3), r / 2 * sin(M_PI * 2 / 3);
+  p2 << r * cos(M_PI * 2 / 3), r * sin(M_PI * 2 / 3);
+  p3(0.0, 0.0);
+  const int orientation = CalcTriangleOrientation(p1, p2, p3);
+  EXPECT_EQ(orientation, 0);
+}
+
 GTEST_TEST(TriangleAreaTest, AreaValue) {
   const Vector2d p1(0.0, 0.0);
   const Vector2d p2(1.0, 0.0);

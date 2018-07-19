@@ -1,5 +1,10 @@
 #include "drake/multibody/boussinesq_solver/test_helper.h"
 
+#include <fstream>
+#include <iostream>
+#include <string>
+#include "drake/multibody/boussinesq_solver/math_helper.h"
+
 namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
@@ -74,8 +79,8 @@ std::pair<std::vector<Eigen::Vector3d>,
       assert(cur_t < num_tris);
       const Vector3<int> tri(
           FindIndexInMeshCircle(ir, itheta, ipos),
-          FindIndexInMeshCircle(ir, itheta, ipos+1),
-          FindIndexInMeshCircle(ir-1, itheta, ipos));
+          FindIndexInMeshCircle(ir-1, itheta, ipos),
+          FindIndexInMeshCircle(ir, itheta, ipos+1));
       triangles[cur_t] = tri;
       cur_t ++;
 
@@ -99,9 +104,10 @@ std::pair<std::vector<Eigen::Vector3d>,
         assert(cur_t < num_tris);
         const Vector3<int> tri2(
             FindIndexInMeshCircle(ir, itheta, ipos),
-            FindIndexInMeshCircle(ir, itheta, ipos + 1),
-            FindIndexInMeshCircle(ir - 1, itheta, ipos));
-        triangles[cur_t] = tri2;
+            FindIndexInMeshCircle(ir - 1, itheta, ipos),
+            FindIndexInMeshCircle(ir, itheta, ipos + 1));
+
+            triangles[cur_t] = tri2;
         cur_t ++;
 
         const Vector3<double> pos(
@@ -146,8 +152,100 @@ Eigen::VectorXd GetPressureIntegrandX(
     const Vector3<double> pos = points_in_mesh[i_node];
     pressures(i_node, 0) = pos(0);
   }
+  std::cout << "cout try !!!" << std::endl;
   return pressures;
 }
+
+bool OutputMeshToVTK(const std::vector<Vector3<double>>& points_in_mesh,
+                     const std::vector<Vector3<int>>& triangles_in_mesh,
+                     const VectorX<double>& values,
+                     const int file_type) {
+  const int num_nodes = points_in_mesh.size();
+  const int num_tris = triangles_in_mesh.size();
+
+    switch (file_type) {
+      case 0: {
+        // output to .obj file
+        for (int i_node = 0; i_node < num_nodes; i_node++) {
+          const Vector3<double> pos = points_in_mesh[i_node];
+          std::clog << "v " << pos[0] << " " << pos[1]
+                    << " " << values[i_node] << std::endl;
+        }
+
+        std::clog << std::endl;
+        for (int i_tri = 0; i_tri < num_tris; i_tri++) {
+          const Vector3<int> tri = triangles_in_mesh[i_tri];
+          std::clog << "f " << tri[0] + 1 << " " << tri[1] + 1
+                    << " " << tri[2] + 1 << std::endl;
+        }
+        break;
+      }
+      case 1: {
+        //  output to .vtk file
+        std::clog << "# vtk DataFile Version 3.0" << std::endl;
+        std::clog << "Visualize mesh data" << std::endl;
+        std::clog << "ASCII" << std::endl;
+        std::clog << std::endl;
+        std::clog << "DATASET UNSTRUCTURED_GRID" << std::endl;
+
+        std::clog << "POINTS " << num_nodes << " double" << std::endl;
+        for (int i_node = 0; i_node < num_nodes; i_node++) {
+          const Vector3<double> pos = points_in_mesh[i_node];
+          std::clog << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+        }
+
+        std::clog << std::endl;
+        std::clog << "CELLS " << num_tris << " " << 8 << std::endl;
+        for (int i_tri = 0; i_tri < num_tris; i_tri++) {
+          const Vector3<int> tri = triangles_in_mesh[i_tri];
+          std::clog << "3 " << tri[0] << " " << tri[1] << " " << tri[2] << std::endl;
+        }
+
+        std::clog << std::endl;
+        std::clog << "CELL_TYPES " << num_tris << std::endl;
+        for (int i_tri = 0; i_tri < num_tris; i_tri++) {
+          std::clog << "5" << std::endl;
+        }
+
+        std::clog << std::endl;
+        std::clog << "POINT_DATA " << num_nodes << std::endl;
+        std::clog << "SCALARS pressure double 1" << std::endl;
+        std::clog << "LOOKUP_TABLE default" << std::endl;
+
+        for (int i_node = 0; i_node < num_nodes; i_node++) {
+          std::clog << values(i_node) << std::endl;
+        }
+        break;
+      }
+    }
+
+  std::clog << std::endl;
+  return true;
+}
+
+double CalcForceOverMesh(const std::vector<Vector3<double>>& points_in_mesh,
+                         const std::vector<Vector3<int>>& triangles_in_mesh,
+                         const VectorX<double>& pressure) {
+  const int num_tris = triangles_in_mesh.size();
+  double total_force = 0;
+
+  for (int i_tri = 0; i_tri < num_tris; i_tri++) {
+    const Vector3<int>& nodes = triangles_in_mesh[i_tri];
+    const Vector3<double>& p1 = points_in_mesh[nodes[0]];
+    const Vector3<double>& p2 = points_in_mesh[nodes[1]];
+    const Vector3<double>& p3 = points_in_mesh[nodes[2]];
+    double tri_area = fabs(
+        CalcTriangleArea(p1.head(2), p2.head(2), p3.head(2)));
+
+    for (int i_node = 0; i_node < 3; i_node++) {
+      total_force = total_force + tri_area / 3 * pressure[nodes[i_node]];
+    }
+  }
+  return total_force;
+}
+
+
+
 
 }  // namespace boussinesq_solver
 }  // namespace multibody

@@ -45,11 +45,16 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
   }
 
   const Eigen::MatrixXd origin = Eigen::MatrixXd::Zero(2, 1);
-  const double signed_theta =
-      acos(p1.dot(p2) / (p1.norm() * p2.norm())) *
-          CalcTriangleOrientation(p1, p2, origin);
+  const double dot_product = (p1(0) * p2(0) + p1(1) * p2(1)) / (p1.norm() * p2.norm());
 
-  if (fabs(signed_theta) < kTolerance) {
+  double a_signed_theta = acos(dot_product);
+  if (dot_product > 1.0 || dot_product < -1.0) a_signed_theta = 0;
+
+  const double orientation = CalcTriangleOrientation(p1, p2, origin);
+  const double signed_theta = a_signed_theta * orientation;
+
+  if (fabs(signed_theta) < kTolerance ||
+      fabs(M_PI - signed_theta) < kTolerance) {
     return Vector3<double>::Zero();
   }
 

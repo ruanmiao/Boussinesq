@@ -62,6 +62,28 @@ Eigen::VectorXd GetPressureIntegrandR(
 Eigen::VectorXd GetPressureIntegrandX(
     const std::vector<Eigen::Vector3d>& points_in_mesh);
 
+/// Helper function outputs the mesh data to .vtk files for visualization
+/// support.
+/// @param points_in_mesh Poses of nodes in the mesh
+/// @param triangles_in_mesh Indexes of points of triangles in the mesh
+/// @param filename (with .vtk extension)
+/// @returns none
+bool OutputMeshToVTK(const std::vector<Vector3<double>>& points_in_mesh,
+                     const std::vector<Vector3<int>>& triangles_in_mesh,
+                     const VectorX<double>& values,
+                     const int file_type = 0 );
+
+/// Helper function computes the total force applied knowing the pressure over
+/// the mesh
+/// @param points_in_mesh Poses of nodes in the mesh
+/// @param triangles_in_mesh Indexes of points of triangles in the mesh
+/// @param pressure Pressure at each nodes in the mesh
+/// @returns Total force
+double CalcForceOverMesh(const std::vector<Vector3<double>>& points_in_mesh,
+                         const std::vector<Vector3<int>>& triangles_in_mesh,
+                         const VectorX<double>& pressure);
+
+
 
 }  // namespace boussinesq_solver
 }  // namespace multibody
