@@ -156,69 +156,95 @@ Eigen::VectorXd GetPressureIntegrandX(
 
 bool OutputMeshToVTK(const std::vector<Vector3<double>>& points_in_mesh,
                      const std::vector<Vector3<int>>& triangles_in_mesh,
-                     const VectorX<double>& values,
-                     const int file_type) {
+                     const VectorX<double>& values) {
   const int num_nodes = points_in_mesh.size();
   const int num_tris = triangles_in_mesh.size();
 
-    switch (file_type) {
-      case 0: {
-        // output to .obj file
-        for (int i_node = 0; i_node < num_nodes; i_node++) {
-          const Vector3<double> pos = points_in_mesh[i_node];
-          std::clog << "v " << pos[0] << " " << pos[1]
-                    << " " << values[i_node] << std::endl;
-        }
+  std::ofstream mesh_obj;
+  mesh_obj.open("mesh_data.obj");
 
-        std::clog << std::endl;
-        for (int i_tri = 0; i_tri < num_tris; i_tri++) {
-          const Vector3<int> tri = triangles_in_mesh[i_tri];
-          std::clog << "f " << tri[0] + 1 << " " << tri[1] + 1
-                    << " " << tri[2] + 1 << std::endl;
-        }
-        break;
-      }
-      case 1: {
-        //  output to .vtk file
-        std::clog << "# vtk DataFile Version 3.0" << std::endl;
-        std::clog << "Visualize mesh data" << std::endl;
-        std::clog << "ASCII" << std::endl;
-        std::clog << std::endl;
-        std::clog << "DATASET UNSTRUCTURED_GRID" << std::endl;
+  // output to .obj file
+  for (int i_node = 0; i_node < num_nodes; i_node++) {
+    const Vector3<double> pos = points_in_mesh[i_node];
+    mesh_obj << "v " << pos[0] << " " << pos[1]
+              << " " << values[i_node] << std::endl;
+  }
 
-        std::clog << "POINTS " << num_nodes << " double" << std::endl;
-        for (int i_node = 0; i_node < num_nodes; i_node++) {
-          const Vector3<double> pos = points_in_mesh[i_node];
-          std::clog << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-        }
+  mesh_obj << std::endl;
+  for (int i_tri = 0; i_tri < num_tris; i_tri++) {
+    const Vector3<int> tri = triangles_in_mesh[i_tri];
+    mesh_obj << "f " << tri[0] + 1 << " " << tri[1] + 1
+              << " " << tri[2] + 1 << std::endl;
+  }
+  mesh_obj.close();
 
-        std::clog << std::endl;
-        std::clog << "CELLS " << num_tris << " " << 8 << std::endl;
-        for (int i_tri = 0; i_tri < num_tris; i_tri++) {
-          const Vector3<int> tri = triangles_in_mesh[i_tri];
-          std::clog << "3 " << tri[0] << " " << tri[1]
-                    << " " << tri[2] << std::endl;
-        }
+  std::ofstream mesh_vtk_2d;
+  mesh_vtk_2d.open("mesh_data_2D.vtk");
 
-        std::clog << std::endl;
-        std::clog << "CELL_TYPES " << num_tris << std::endl;
-        for (int i_tri = 0; i_tri < num_tris; i_tri++) {
-          std::clog << "5" << std::endl;
-        }
+  std::ofstream mesh_vtk_3d;
+  mesh_vtk_3d.open("mesh_data_3D.vtk");
 
-        std::clog << std::endl;
-        std::clog << "POINT_DATA " << num_nodes << std::endl;
-        std::clog << "SCALARS pressure double 1" << std::endl;
-        std::clog << "LOOKUP_TABLE default" << std::endl;
+  //  output to .vtk file.
+  mesh_vtk_2d << "# vtk DataFile Version 3.0" << std::endl;
+  mesh_vtk_2d << "Visualize mesh data" << std::endl;
+  mesh_vtk_2d << "ASCII" << std::endl;
+  mesh_vtk_2d << std::endl;
+  mesh_vtk_2d << "DATASET UNSTRUCTURED_GRID" << std::endl;
+  mesh_vtk_2d << "POINTS " << num_nodes << " double" << std::endl;
 
-        for (int i_node = 0; i_node < num_nodes; i_node++) {
-          std::clog << values(i_node) << std::endl;
-        }
-        break;
-      }
-    }
+  mesh_vtk_3d << "# vtk DataFile Version 3.0" << std::endl;
+  mesh_vtk_3d << "Visualize mesh data" << std::endl;
+  mesh_vtk_3d << "ASCII" << std::endl;
+  mesh_vtk_3d << std::endl;
+  mesh_vtk_3d << "DATASET UNSTRUCTURED_GRID" << std::endl;
+  mesh_vtk_3d << "POINTS " << num_nodes << " double" << std::endl;
 
-  std::clog << std::endl;
+  for (int i_node = 0; i_node < num_nodes; i_node++) {
+    const Vector3<double> pos = points_in_mesh[i_node];
+    mesh_vtk_2d << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+    mesh_vtk_3d << pos[0] << " " << pos[1]
+                << " " << values[i_node] << std::endl;
+  }
+
+  mesh_vtk_2d << std::endl;
+  mesh_vtk_2d << "CELLS " << num_tris << " " << num_tris * 4 << std::endl;
+
+  mesh_vtk_3d << std::endl;
+  mesh_vtk_3d << "CELLS " << num_tris << " " << num_tris * 4 << std::endl;
+
+  for (int i_tri = 0; i_tri < num_tris; i_tri++) {
+    const Vector3<int> tri = triangles_in_mesh[i_tri];
+    mesh_vtk_2d << "3 " << tri[0] << " " << tri[1]
+              << " " << tri[2] << std::endl;
+    mesh_vtk_3d << "3 " << tri[0] << " " << tri[1]
+                << " " << tri[2] << std::endl;
+  }
+
+  mesh_vtk_2d << std::endl;
+  mesh_vtk_2d << "CELL_TYPES " << num_tris << std::endl;
+
+  mesh_vtk_3d << std::endl;
+  mesh_vtk_3d << "CELL_TYPES " << num_tris << std::endl;
+
+  for (int i_tri = 0; i_tri < num_tris; i_tri++) {
+    mesh_vtk_2d << "5" << std::endl;
+    mesh_vtk_3d << "5" << std::endl;
+  }
+
+  mesh_vtk_2d << std::endl;
+  mesh_vtk_2d << "POINT_DATA " << num_nodes << std::endl;
+  mesh_vtk_2d << "SCALARS pressure double 1" << std::endl;
+  mesh_vtk_2d << "LOOKUP_TABLE default" << std::endl;
+
+  for (int i_node = 0; i_node < num_nodes; i_node++) {
+    mesh_vtk_2d << values(i_node) << std::endl;
+  }
+  mesh_vtk_2d << std::endl;
+  mesh_vtk_2d.close();
+
+  mesh_vtk_3d << std::endl;
+  mesh_vtk_3d.close();
+
   return true;
 }
 

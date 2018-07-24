@@ -70,8 +70,7 @@ Eigen::VectorXd GetPressureIntegrandX(
 /// @returns none
 bool OutputMeshToVTK(const std::vector<Vector3<double>>& points_in_mesh,
                      const std::vector<Vector3<int>>& triangles_in_mesh,
-                     const VectorX<double>& values,
-                     const int file_type = 0);
+                     const VectorX<double>& values);
 
 /// Helper function computes the total force applied knowing the pressure over
 /// the mesh

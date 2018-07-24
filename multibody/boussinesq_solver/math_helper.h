@@ -42,10 +42,45 @@ double CalcIntegralJ0minus1(double theta_0, double theta_f);
 /// @returns the integral Jmn. where m = 1, n = -2.
 double CalcIntegralJ1minus2(double theta_0, double theta_f);
 
-/// This method returns the inverse of a 2x2 matrix
-/// @param matrix to be inversed
-/// @returns the integral Jmn.
-Matrix2<double> InverseMatrix2(Matrix2<double> matrix);
+/// This method returns the integral of Jₘₙ =∫ sinᵐ x cosⁿ x dx
+/// in the interval x ∈ [θ₀, θf], where m = 0, n = 0;
+/// @param theta_0.
+/// @param theta_f.
+/// @returns the integral Jmn. where m = 0, n = 0.
+double CalcIntegralJ00(double theta_0, double theta_f);
+
+/// This method returns the integral of Iₘₙ⁽ᵖ⁾ = ∫ sinᵐx cosⁿx Δᵖ dx
+/// in the interval x ∈ [θ₀, θf], where p = 1, m = 0, n = -1;
+/// Δ² = 1 - α²sin²θ
+/// @param theta_0.
+/// @param theta_f.
+/// @returns the integral Imn^(p). where m = 0, n = -1, p = 1.
+double CalcIntegralI0minus1P1(double theta_0, double theta_f, double alpha);
+
+/// This method returns the integral of Iₘₙ⁽ᵖ⁾ = ∫ sinᵐx cosⁿx Δᵖ dx
+/// in the interval x ∈ [θ₀, θf], where p = 1, m = 1, n = -2;
+/// Δ² = 1 - α²sin²θ
+/// @param theta_0.
+/// @param theta_f.
+/// @returns the integral Imn^(p). where m = 1, n = -2, p = 1.
+double CalcIntegralI1minus2P1(double theta_0, double theta_f, double alpha);
+
+/// This method returns the integral of Iₘₙ⁽ᵖ⁾ = ∫ sinᵐx cosⁿx Δᵖ dx
+/// in the interval x ∈ [θ₀, θf], where p = -1, m = 2, n = -1;
+/// Δ² = 1 - α²sin²θ
+/// @param theta_0.
+/// @param theta_f.
+/// @returns the integral Imn^(p). where m = 2, n = -1, p = -1.
+double CalcIntegralI2minus1Pminus1(
+    double theta_0, double theta_f, double alpha);
+
+/// This method returns the integral of Iₘₙ⁽ᵖ⁾ = ∫ sinᵐx cosⁿx Δᵖ dx
+/// in the interval x ∈ [θ₀, θf], where p = -1, m = 1, n = 0;
+/// Δ² = 1 - α²sin²θ
+/// @param theta_0.
+/// @param theta_f.
+/// @returns the integral Imn^(p). where m = 1, n = 0, p = -1.
+double CalcIntegralI10Pminus1(double theta_0, double theta_f, double alpha);
 
 
 }  // namespace boussinesq_solver

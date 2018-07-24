@@ -107,6 +107,54 @@ GTEST_TEST(IntegralJm1nN2Test, PiOverTwo) {
       Jmn, expected_Jmn, 10e+16 * std::numeric_limits<double>::epsilon());
 }
 
+/// The expected values for this test are the results by running Matlab. The
+/// precision (15 digits) of the expected values if the same as the "long"
+/// in Matlab
+GTEST_TEST(IntegralIm0nN1P1Test, NonTrivialAlpha) {
+  const double theta_0 = 2 * M_PI / 5;
+  const double theta_f = -M_PI / 3;
+  const double Jmn = CalcIntegralI0minus1P1(theta_0, theta_f, 0.111);
+  const double expected_Jmn = -3.151400810889063;
+  EXPECT_NEAR(
+      Jmn, expected_Jmn, 10 * std::numeric_limits<double>::epsilon());
+}
+
+/// The expected values for this test are the results by running Matlab. The
+/// precision (15 digits) of the expected values if the same as the "long"
+/// in Matlab
+GTEST_TEST(IntegralIm1nN2P1Test, NonTrivialAlpha) {
+  const double theta_0 = -M_PI / 3;
+  const double theta_f = M_PI / 4;
+  const double Jmn = CalcIntegralI1minus2P1(theta_0, theta_f, 0.111);
+  const double expected_Jmn = -0.583448860928930;
+  EXPECT_NEAR(
+      Jmn, expected_Jmn, 10 * std::numeric_limits<double>::epsilon());
+}
+
+/// The expected values for this test are the results by running Matlab. The
+/// precision (15 digits) of the expected values if the same as the "long"
+/// in Matlab
+GTEST_TEST(IntegralIm2nN1PN1Test, NonTrivialAlpha) {
+  const double theta_0 = M_PI * 2 / 5;
+  const double theta_f = -M_PI / 4;
+  const double Jmn = CalcIntegralI2minus1Pminus1(theta_0, theta_f, 0.15);
+  const double expected_Jmn = -1.073471020695750;
+  EXPECT_NEAR(
+      Jmn, expected_Jmn, 10 * std::numeric_limits<double>::epsilon());
+}
+
+/// The expected values for this test are the results by running Matlab. The
+/// precision (15 digits) of the expected values if the same as the "long"
+/// in Matlab
+GTEST_TEST(IntegralIm1n0PN1Test, NonTrivialAlpha) {
+  const double theta_0 = M_PI * 2 / 5;
+  const double theta_f = -M_PI / 4;
+  const double Jmn = CalcIntegralI10Pminus1(theta_0, theta_f, 0.15);
+  const double expected_Jmn = -0.401394895991949;
+  EXPECT_NEAR(
+      Jmn, expected_Jmn, 10 * std::numeric_limits<double>::epsilon());
+}
+
 }  // namespace
 }  // namespace boussinesq_solver
 }  // namespace multibody

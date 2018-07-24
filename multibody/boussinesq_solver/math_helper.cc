@@ -39,6 +39,63 @@ double CalcIntegralJ1minus2(double theta_0, double theta_f) {
   return Jmn;
 }
 
+double CalcIntegralJ00(double theta_0, double theta_f) {
+  return theta_f - theta_0;
+}
+
+double CalcIntegralI0minus1P1(double theta_0, double theta_f, double alpha) {
+  double sol0_1 = alpha * asin(alpha * sin(theta_0));
+  double solf_1 = alpha * asin(alpha * sin(theta_f));
+
+  double sol0_2 = sqrt(1 - pow(alpha, 2)) *
+      atanh((sqrt(2 * (1 / pow(alpha, 2) - 1)) * sin(theta_0))
+                / sqrt(cos(2 * theta_0) + 2 * (1 / pow(alpha, 2) - 1) + 1));
+
+  double solf_2 = sqrt(1 - pow(alpha, 2)) *
+      atanh((sqrt(2 * (1 / pow(alpha, 2) - 1)) * sin(theta_f))
+                / sqrt(cos(2 * theta_f) + 2 * (1 / pow(alpha, 2) - 1) + 1));
+  return  solf_1 + solf_2 - sol0_1 - sol0_2;
+}
+
+double CalcIntegralI1minus2P1(double theta_0, double theta_f, double alpha) {
+  double sol0_1 = alpha * asinh(
+      (alpha * sqrt(1 - pow(alpha, 2)) * cos(theta_0)) / (pow(alpha, 2) - 1));
+  double solf_1 = alpha * asinh(
+      (alpha * sqrt(1 - pow(alpha, 2)) * cos(theta_f)) / (pow(alpha, 2) - 1));
+
+  double sol0_2 = sqrt(pow(alpha, 2) * pow(cos(theta_0), 2) - pow(alpha, 2) + 1)
+      / cos(theta_0);
+  double solf_2 = sqrt(pow(alpha, 2) * pow(cos(theta_f), 2) - pow(alpha, 2) + 1)
+      / cos(theta_f);
+
+  return solf_1 + solf_2 - sol0_1 - sol0_2;
+}
+
+double CalcIntegralI2minus1Pminus1(
+    double theta_0, double theta_f, double alpha) {
+  double one_minus_a2 = 1 - pow(alpha, 2);
+
+  double sol0_1 = - 1 / alpha * asin(alpha * sin(theta_0));
+  double solf_1 = - 1 / alpha * asin(alpha * sin(theta_f));
+
+  double sol0_2 = sqrt(1/one_minus_a2) *
+      atanh((sqrt(2 * (1 / pow(alpha, 2) - 1)) * sin(theta_0))
+                / sqrt(cos(2 * theta_0) + 2 * (1 / pow(alpha, 2) - 1) + 1));
+  double solf_2 = sqrt(1/one_minus_a2) *
+      atanh((sqrt(2 * (1 / pow(alpha, 2) - 1)) * sin(theta_f))
+                / sqrt(cos(2 * theta_f) + 2 * (1 / pow(alpha, 2) - 1) + 1));
+
+  return solf_1 + solf_2 - sol0_1 - sol0_2;
+}
+
+double CalcIntegralI10Pminus1(double theta_0, double theta_f, double alpha) {
+  double sol0 = asinh((alpha * sqrt(1 - pow(alpha, 2)) * cos(theta_0)) /
+      (pow(alpha, 2) - 1)) / alpha;
+  double solf = asinh((alpha * sqrt(1 - pow(alpha, 2)) * cos(theta_f)) /
+      (pow(alpha, 2) - 1)) / alpha;
+  return solf - sol0;
+}
+
 }  // namespace boussinesq_solver
 }  // namespace multibody
 }  // namespace drake
