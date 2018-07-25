@@ -44,6 +44,9 @@ double CalcIntegralJ00(double theta_0, double theta_f) {
 }
 
 double CalcIntegralI0minus1P1(double theta_0, double theta_f, double alpha) {
+  if (fabs(alpha - 0) < 10 * std::numeric_limits<double>::epsilon()) {
+    return  CalcIntegralJ0minus1(theta_0, theta_f);
+  }
   double sol0_1 = alpha * asin(alpha * sin(theta_0));
   double solf_1 = alpha * asin(alpha * sin(theta_f));
 
@@ -58,6 +61,9 @@ double CalcIntegralI0minus1P1(double theta_0, double theta_f, double alpha) {
 }
 
 double CalcIntegralI1minus2P1(double theta_0, double theta_f, double alpha) {
+  if (fabs(alpha - 0) < 10 * std::numeric_limits<double>::epsilon()) {
+    return  CalcIntegralJ1minus2(theta_0, theta_f);
+  }
   double sol0_1 = alpha * asinh(
       (alpha * sqrt(1 - pow(alpha, 2)) * cos(theta_0)) / (pow(alpha, 2) - 1));
   double solf_1 = alpha * asinh(

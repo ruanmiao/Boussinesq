@@ -119,6 +119,24 @@ GTEST_TEST(SplitedGeneralTriangleTest, ColinearOndEdgep1p2) {
           MatrixCompareType::absolute));
 }
 
+/// The expected values for this files are the results by running Matlab. The
+/// precision (6 digits) of the expected values if the same as the tol. of the
+/// Integration function in Matlab
+GTEST_TEST(IntegralReferenceTriangle3DTest, GeneralCase) {
+  Vector2d p1, p2;
+  p1 << 2.0, 2.0;
+  p2 << 0.5, 1.5;
+
+  Vector3d res = CalcIntegralReferenceTriangle(p1, p2, 0.8);
+  Vector3d expected_res;
+  expected_res << 0.465063869455651, 0.673390142473203, 0.649887021833660;
+  EXPECT_TRUE(
+      CompareMatrices(
+          res,
+          expected_res, 10 * 1e-5,
+          MatrixCompareType::absolute));
+}
+
 }  // namespace
 }  // namespace boussinesq_solver
 }  // namespace multibody

@@ -26,7 +26,7 @@ MatrixX<double> CalcElementComplianceRowMatrix(
     const Eigen::Vector2d& p2_tilde = p2.head(2) - node_A.head(2);
     const Eigen::Vector2d& p3_tilde = p3.head(2) - node_A.head(2);
 
-    Vector3<double> element_compliance = CalGenralTriangleCompliance(
+    Vector3<double> element_compliance = CalcGeneralTriangleCompliance(
         p1_tilde, p2_tilde, p3_tilde, k_const);
 
     const double c1 = compliance(indexes(0));
