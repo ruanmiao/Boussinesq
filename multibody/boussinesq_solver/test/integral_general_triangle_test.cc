@@ -56,12 +56,12 @@ GTEST_TEST(IntegralGeneralTriangleTest, VertixAtOrigin) {
   p2 << -2.0, 0.0;
   p3 << 0.0, -1.0;
 
-  Vector3d res = CalcGeneralTriangleCompliance(p1, p2, p3);
+  Vector3d res_zZero = CalcGeneralTriangleCompliance(p1, p2, p3);
   Vector3d expected_res;
   expected_res << 0.860817881928008, 0.372163576385602, 0.488654305542406;
   EXPECT_TRUE(
       CompareMatrices(
-          res,
+          res_zZero,
           expected_res,
           10 * std::numeric_limits<double>::epsilon(),
           MatrixCompareType::absolute));

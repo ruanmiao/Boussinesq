@@ -18,7 +18,7 @@ namespace boussinesq_solver {
 /// @param k_const The compliance-related constant.
 /// @returns 1xn vector/row matrix, with v(i) being the compliance from point
 /// i to point A
-MatrixX<double> CalcElementComplianceRowMatrix(
+MatrixX<double> CalcRowComplianceMatrix(
     const std::vector<Eigen::Vector3d>& points_in_mesh,
     const std::vector<Eigen::Vector3i>& triangles_in_mesh,
     const Vector3<double>& node_A,

@@ -16,10 +16,10 @@ drake_cc_package_library(
     name = "boussinesq_solver",
     deps = [
         ":compliance_matrix",
-        ":element_compliance_matrix",
         ":integral_general_triangle",
         ":integral_reference_triangle",
         ":math_helper",
+        ":row_compliance_matrix",
         ":test_helper",
     ],
 )
@@ -28,17 +28,17 @@ drake_cc_library(
     name = "compliance_matrix",
     srcs = [
         "compliance_matrix.cc",
-        "element_compliance_matrix.cc",
         "integral_general_triangle.cc",
         "integral_reference_triangle.cc",
         "math_helper.cc",
+        "row_compliance_matrix.cc",
     ],
     hdrs = [
         "compliance_matrix.h",
-        "element_compliance_matrix.h",
         "integral_general_triangle.h",
         "integral_reference_triangle.h",
         "math_helper.h",
+        "row_compliance_matrix.h",
     ],
     deps = [
         "//common:essential",
@@ -46,18 +46,18 @@ drake_cc_library(
 )
 
 drake_cc_library(
-    name = "element_compliance_matrix",
+    name = "row_compliance_matrix",
     srcs = [
-        "element_compliance_matrix.cc",
         "integral_general_triangle.cc",
         "integral_reference_triangle.cc",
         "math_helper.cc",
+        "row_compliance_matrix.cc",
     ],
     hdrs = [
-        "element_compliance_matrix.h",
         "integral_general_triangle.h",
         "integral_reference_triangle.h",
         "math_helper.h",
+        "row_compliance_matrix.h",
     ],
     deps = [
         "//common:essential",
@@ -131,9 +131,9 @@ drake_cc_googletest(
 )
 
 drake_cc_googletest(
-    name = "element_compliance_matrix_test",
+    name = "row_compliance_matrix_test",
     deps = [
-        ":element_compliance_matrix",
+        ":row_compliance_matrix",
         ":test_helper",
         "//common/test_utilities:eigen_matrix_compare",
     ],

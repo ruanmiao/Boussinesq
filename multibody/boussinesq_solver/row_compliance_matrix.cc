@@ -1,4 +1,4 @@
-#include "drake/multibody/boussinesq_solver/element_compliance_matrix.h"
+#include "drake/multibody/boussinesq_solver/row_compliance_matrix.h"
 
 #include "drake/multibody/boussinesq_solver/integral_general_triangle.h"
 #include "drake/multibody/boussinesq_solver/math_helper.h"
@@ -7,10 +7,10 @@ namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
 
-MatrixX<double> CalcElementComplianceRowMatrix(
+MatrixX<double> CalcRowComplianceMatrix(
     const std::vector<Eigen::Vector3d>& points_in_mesh,
     const std::vector<Eigen::Vector3i>& triangles_in_mesh,
-    const Vector3<double> &node_A,
+    const Vector3<double>& node_A,
     double k_const) {
   const size_t num_nodes = points_in_mesh.size();
   const size_t num_tris = triangles_in_mesh.size();

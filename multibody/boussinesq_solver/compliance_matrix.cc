@@ -1,6 +1,6 @@
 #include "drake/multibody/boussinesq_solver/compliance_matrix.h"
 
-#include "drake/multibody/boussinesq_solver/element_compliance_matrix.h"
+#include "drake/multibody/boussinesq_solver/row_compliance_matrix.h"
 
 namespace drake {
 namespace multibody {
@@ -14,8 +14,10 @@ MatrixX<double> CalcComplianceMatrix(
   MatrixX<double> compliance(num_nodes, num_nodes);
 
   for (int i_row = 0; i_row < num_nodes; i_row++) {
-    compliance.row(i_row) = CalcElementComplianceRowMatrix(points_in_mesh,
-        triangles_in_mesh, points_in_mesh.at(i_row), k_const);
+    compliance.row(i_row) = CalcRowComplianceMatrix(points_in_mesh,
+                                                    triangles_in_mesh,
+                                                    points_in_mesh.at(i_row),
+                                                    k_const);
   }
 
   return compliance;

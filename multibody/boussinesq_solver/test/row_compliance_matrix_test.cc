@@ -1,4 +1,4 @@
-#include "drake/multibody/boussinesq_solver/element_compliance_matrix.h"
+#include "drake/multibody/boussinesq_solver/row_compliance_matrix.h"
 
 #include <gtest/gtest.h>
 
@@ -21,7 +21,7 @@ using Eigen::Vector3d;
 /// (different from the "expected") bellow. The difference/error to the
 /// analytical solution arises from the non-linear pressure field in the
 /// Cardesian system and the triangular linear interpolation.
-GTEST_TEST(ElementComplianceMatrixTest, IntegrantR) {
+GTEST_TEST(RowComplianceMatrixTest, IntegrantR) {
   const double length = 1;
   const Vector2d p1(0.0, 0.0);
   const Vector2d p2(length, 0.0);
@@ -32,7 +32,7 @@ GTEST_TEST(ElementComplianceMatrixTest, IntegrantR) {
   const std::pair<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3i>>&
       mesh_data = MeshSquare(p1, p2, p3, num_px, num_py);
 
-  MatrixX<double> compliance_p1 = CalcElementComplianceRowMatrix(
+  MatrixX<double> compliance_p1 = CalcRowComplianceMatrix(
       mesh_data.first, mesh_data.second, Vector3d(0.0, 0.0, 0.0), 1);
   VectorX<double> pressures = GetPressureIntegrandR(mesh_data.first);
 
@@ -64,7 +64,7 @@ GTEST_TEST(ElementComplianceMatrixTest, IntegrantR) {
 /// the pressure filed is linear in the Cartesian coordinate, the results
 /// should be the same with the "expected" solution (numerical result).
 /// The tolerance here is set to the Matlab function tolerance.
-GTEST_TEST(ElementComplianceMatrixTest, IntegrantX) {
+GTEST_TEST(RowComplianceMatrixTest, IntegrantX) {
   const double length = 1;
   const Vector2d p1(0.0, 0.0);
   const Vector2d p2(length, 0.0);
@@ -75,7 +75,7 @@ GTEST_TEST(ElementComplianceMatrixTest, IntegrantX) {
   const std::pair<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3i>>&
       mesh_data = MeshSquare(p1, p2, p3, num_px, num_py);
 
-  MatrixX<double> compliance_p1 = CalcElementComplianceRowMatrix(
+  MatrixX<double> compliance_p1 = CalcRowComplianceMatrix(
       mesh_data.first, mesh_data.second, Vector3d(0.0, 0.0, 0.0), 1);
   VectorX<double> pressures = GetPressureIntegrandX(mesh_data.first);
 
@@ -94,7 +94,7 @@ GTEST_TEST(ElementComplianceMatrixTest, IntegrantX) {
 /// the pressure filed is linear in the Cartesian coordinate, the results
 /// should be the same with the "expected" solution (numerical result).
 /// The tolerance here is set to the Matlab function tolerance.
-GTEST_TEST(ElementComplianceMatrixTest, RowCompliance) {
+GTEST_TEST(RowComplianceMatrixTest, RowCompliance) {
   double radius = 1;
   int elements_per_r = 3;
   std::pair<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3i>>
@@ -104,7 +104,7 @@ GTEST_TEST(ElementComplianceMatrixTest, RowCompliance) {
   const std::vector<Eigen::Vector3d>& points_in_mesh = mesh_data.first;
   const std::vector<Eigen::Vector3i>& triangles_in_mesh = mesh_data.second;
 
-  MatrixX<double> compliance_p1 = CalcElementComplianceRowMatrix(
+  MatrixX<double> compliance_p1 = CalcRowComplianceMatrix(
       points_in_mesh, triangles_in_mesh, points_in_mesh[0], 1);
   const int num_nodes = points_in_mesh.size();
   MatrixX<double> expected(1, num_nodes);
