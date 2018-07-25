@@ -128,40 +128,6 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
   const double theta_0 = phi_integral_offset;
   const double theta_f = phi_integral_offset + signed_theta;
 
-  // theta is theta
-//  const double delta_0 = sqrt(1 - pow(alpha * sin(0), 2));
-//  const double delta_f = sqrt(1 - pow(alpha * sin(signed_theta), 2));
-//
-//  Matrix2<double> rotation_matrix_phi;
-//  rotation_matrix_phi << cos(phi_integral_offset), sin(phi_integral_offset),
-//      -sin(phi_integral_offset), cos(phi_integral_offset);
-//
-//  Matrix2<double> rotation_matrix_psi;
-//  rotation_matrix_psi << cos(psi_offset_from_x), -sin(psi_offset_from_x),
-//      sin(psi_offset_from_x), cos(psi_offset_from_x);
-//
-//  Vector2<double> integral_without_rotation;
-//
-//  integral_without_rotation(0) = pow(beta, 2) * alpha_prime / 2 *
-//      CalcIntegralI0minus1P1(theta_0, theta_f, alpha) +
-//      pow(zA, 2) * alpha_prime / 2 *
-//          CalcIntegralI2minus1Pminus1(theta_0, theta_f, alpha) -
-//      pow(zA, 2) / 4 * ((sin(signed_theta) *
-//          log((delta_f + alpha_prime) / (delta_f - alpha_prime))) -
-//          (sin(0) *
-//              log((delta_0 + alpha_prime) / (delta_0 - alpha_prime))));
-//
-//  integral_without_rotation(1) = pow(beta, 2) * alpha_prime / 2 *
-//      CalcIntegralI1minus2P1(theta_0, theta_f, alpha) -
-//      pow(zA, 2) * alpha_prime / 2 *
-//          CalcIntegralI10Pminus1(theta_0, theta_f, alpha) +
-//      pow(zA, 2) / 4 * ((cos(signed_theta) *
-//          log((delta_f + alpha_prime) / (delta_f - alpha_prime))) -
-//          (cos(0) *
-//              log((delta_0 + alpha_prime) / (delta_0 - alpha_prime))));
-
-
-//   theta is theta + phi
   const double delta_0 = sqrt(1 - pow(alpha * sin(theta_0), 2));
   const double delta_f = sqrt(1 - pow(alpha * sin(theta_f), 2));
 
