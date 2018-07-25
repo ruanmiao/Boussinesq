@@ -7,15 +7,24 @@ namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
 
-Vector3<double> CalGenralTriangleCompliance(const Vector2<double>& p1,
-                                            const Vector2<double>& p2,
-                                            const Vector2<double>& p3,
-                                            double k_const) {
+Vector3<double> CalcGeneralTriangleCompliance(const Vector2<double>& p1,
+                                              const Vector2<double>& p2,
+                                              const Vector2<double>& p3,
+                                              double k_const) {
+  return CalcGeneralTriangleCompliance(0.0, p1, p2, p3, k_const);
+}
+
+Vector3<double> CalcGeneralTriangleCompliance(
+    double zA,
+    const Vector2<double>& p1,
+    const Vector2<double>& p2,
+    const Vector2<double>& p3,
+    double k_const) {
   const int is_counter_cw = CalcTriangleOrientation(p1, p2, p3);
 
-  const Vector3<double>& I_12 = CalcIntegralReferenceTriangle(p1, p2);
-  const Vector3<double>& I_23 = CalcIntegralReferenceTriangle(p2, p3);
-  const Vector3<double>& I_31 = CalcIntegralReferenceTriangle(p3, p1);
+  const Vector3<double>& I_12 = CalcIntegralReferenceTriangle(p1, p2, zA);
+  const Vector3<double>& I_23 = CalcIntegralReferenceTriangle(p2, p3, zA);
+  const Vector3<double>& I_31 = CalcIntegralReferenceTriangle(p3, p1, zA);
 
   Vector3<double> I = I_12 + I_23 + I_31;
   if (is_counter_cw < 0) { I = -I; }
@@ -38,6 +47,8 @@ Vector3<double> CalGenralTriangleCompliance(const Vector2<double>& p1,
   const Vector3<double> compliance = k_const * K_abc * I;
   return compliance;
 }
+
+
 }  // namespace boussinesq_solver
 }  // namespace multibody
 }  // namespace drake

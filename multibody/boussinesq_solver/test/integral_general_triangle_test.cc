@@ -4,6 +4,7 @@
 
 #include "drake/common/eigen_types.h"
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
+#include "drake/multibody/boussinesq_solver/integral_reference_triangle.h"
 
 namespace drake {
 namespace multibody {
@@ -56,12 +57,12 @@ GTEST_TEST(IntegralGeneralTriangleTest, VertixAtOrigin) {
   p2 << -2.0, 0.0;
   p3 << 0.0, -1.0;
 
-  Vector3d res_zZero = CalcGeneralTriangleCompliance(p1, p2, p3);
+  Vector3d res = CalcGeneralTriangleCompliance(p1, p2, p3);
   Vector3d expected_res;
   expected_res << 0.860817881928008, 0.372163576385602, 0.488654305542406;
   EXPECT_TRUE(
       CompareMatrices(
-          res_zZero,
+          res,
           expected_res,
           10 * std::numeric_limits<double>::epsilon(),
           MatrixCompareType::absolute));
@@ -84,6 +85,90 @@ GTEST_TEST(IntegralGeneralTriangleTest, ColinearOndEdge1) {
           expected_res,
           10 * std::numeric_limits<double>::epsilon(),
           MatrixCompareType::absolute));
+}
+
+GTEST_TEST(IntegralGeneralTriangleZNonZeroTest, ConstantPressure) {
+  Vector2d p1, p2, p3;
+  p1 << 5.0, 7.0;
+  p2 << 7.0, 6.0;
+  p3 << 5.5, 5.5;
+
+  double zA = 0.8;
+  Vector3d res = CalcGeneralTriangleCompliance(zA, p1, p2, p3);
+  double res_interpolate = res(0) + res(1) + res(2);
+
+  const Vector3<double>& I_12 = CalcIntegralReferenceTriangle(p1, p2, zA);
+  const Vector3<double>& I_23 = CalcIntegralReferenceTriangle(p2, p3, zA);
+  const Vector3<double>& I_31 = CalcIntegralReferenceTriangle(p3, p1, zA);
+
+  double expected_res = fabs(I_12(2) + I_23(2) + I_31(2));
+
+  EXPECT_NEAR(
+      res_interpolate, expected_res,
+      10 * std::numeric_limits<double>::epsilon());
+}
+
+GTEST_TEST(IntegralGeneralTriangleZNonZeroTest, LinearPressure) {
+  Vector2d p1, p2, p3;
+  p1 << 5.0, 7.0;
+  p2 << 7.0, 6.0;
+  p3 << 5.5, 5.5;
+
+  double zA = 0.8;
+  Vector3d res = CalcGeneralTriangleCompliance(zA, p1, p2, p3);
+  double res_interpolate = res(0) * p1(0) + res(1) * p2(0) + res(2) * p3(0);
+
+  const Vector3<double>& I_12 = CalcIntegralReferenceTriangle(p1, p2, zA);
+  const Vector3<double>& I_23 = CalcIntegralReferenceTriangle(p2, p3, zA);
+  const Vector3<double>& I_31 = CalcIntegralReferenceTriangle(p3, p1, zA);
+
+  double expected_res = fabs(I_12(0) + I_23(0) + I_31(0));
+
+  EXPECT_NEAR(
+      res_interpolate, expected_res,
+      10 * std::numeric_limits<double>::epsilon());
+}
+
+GTEST_TEST(IntegralGeneralTriangleZNonZeroTest, OnePointAtOrigin) {
+  Vector2d p1, p2, p3;
+  p1 << 0.0, 0.0;
+  p2 << 7.0, 6.0;
+  p3 << 5.5, 5.5;
+
+  double zA = 0.8;
+  Vector3d res = CalcGeneralTriangleCompliance(zA, p1, p2, p3);
+  double res_interpolate = res(0) + res(1) + res(2);
+
+  const Vector3<double>& I_12 = CalcIntegralReferenceTriangle(p1, p2, zA);
+  const Vector3<double>& I_23 = CalcIntegralReferenceTriangle(p2, p3, zA);
+  const Vector3<double>& I_31 = CalcIntegralReferenceTriangle(p3, p1, zA);
+
+  double expected_res = fabs(I_12(2) + I_23(2) + I_31(2));
+
+  EXPECT_NEAR(
+      res_interpolate, expected_res,
+      10 * std::numeric_limits<double>::epsilon());
+}
+
+GTEST_TEST(IntegralGeneralTriangleZNonZeroTest, OneEdgeAlignedWithX) {
+  Vector2d p1, p2, p3;
+  p1 << 0.0, 0.0;
+  p2 << 7.0, 0.0;
+  p3 << 5.5, 0.5;
+
+  double zA = 0.8;
+  Vector3d res = CalcGeneralTriangleCompliance(zA, p1, p2, p3);
+  double res_interpolate = res(0) * p1(0) + res(1) * p2(0) + res(2) * p3(0);
+
+  const Vector3<double>& I_12 = CalcIntegralReferenceTriangle(p1, p2, zA);
+  const Vector3<double>& I_23 = CalcIntegralReferenceTriangle(p2, p3, zA);
+  const Vector3<double>& I_31 = CalcIntegralReferenceTriangle(p3, p1, zA);
+
+  double expected_res = fabs(I_12(0) + I_23(0) + I_31(0));
+
+  EXPECT_NEAR(
+      res_interpolate, expected_res,
+      10 * std::numeric_limits<double>::epsilon());
 }
 
 }  // namespace
