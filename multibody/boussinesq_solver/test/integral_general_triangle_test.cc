@@ -171,6 +171,27 @@ GTEST_TEST(IntegralGeneralTriangleZNonZeroTest, OneEdgeAlignedWithX) {
       10 * std::numeric_limits<double>::epsilon());
 }
 
+GTEST_TEST(IntegralGeneralTriangleZNonZeroTest, OneEdgeAlignedWithXZ0) {
+  Vector2d p1, p2, p3;
+  p1 << 0.0, 0.0;
+  p2 << 7.0, 0.0;
+  p3 << 5.5, 0.5;
+
+  double zA = 0.0;
+  Vector3d res = CalcGeneralTriangleCompliance(zA, p1, p2, p3);
+  double res_interpolate = res(0) * p1(0) + res(1) * p2(0) + res(2) * p3(0);
+
+  const Vector3<double>& I_12 = CalcIntegralReferenceTriangle(p1, p2, zA);
+  const Vector3<double>& I_23 = CalcIntegralReferenceTriangle(p2, p3, zA);
+  const Vector3<double>& I_31 = CalcIntegralReferenceTriangle(p3, p1, zA);
+
+  double expected_res = fabs(I_12(0) + I_23(0) + I_31(0));
+
+  EXPECT_NEAR(
+      res_interpolate, expected_res,
+      10 * std::numeric_limits<double>::epsilon());
+}
+
 }  // namespace
 }  // namespace boussinesq_solver
 }  // namespace multibody
