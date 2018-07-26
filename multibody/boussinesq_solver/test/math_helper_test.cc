@@ -10,6 +10,7 @@ namespace boussinesq_solver {
 namespace {
 
 using Eigen::Vector2d;
+using Eigen::Vector3d;
 
 GTEST_TEST(TriangleOrientationTest, ClockWise) {
   const Vector2d p1(0.0, 1.0);
@@ -84,9 +85,6 @@ GTEST_TEST(IntegralJm0nN1Test, PiOverTwo) {
   EXPECT_NEAR(Jmn, expected_Jmn, 10 * std::numeric_limits<double>::epsilon());
 }
 
-/// The expected values for this test are the results by running Matlab. The
-/// precision (15 digits) of the expected values if the same as the "long"
-/// in Matlab
 GTEST_TEST(IntegralJm1nN2Test, PosToNeg) {
   const double theta_0 = M_PI / 3;
   const double theta_f = -M_PI / 3;
@@ -154,6 +152,20 @@ GTEST_TEST(IntegralIm1n0PN1Test, NonTrivialAlpha) {
   EXPECT_NEAR(
       Jmn, expected_Jmn, 10 * std::numeric_limits<double>::epsilon());
 }
+
+GTEST_TEST(CalcTransformationFromTriangleFrameTest, GeneralCase) {
+  const Vector3d p1(6.0, 4.0, 2.0);
+  const Vector3d p2(7.0, 9.0, 1.8);
+  const Vector3d p3(5.0, 8.0, 2.5);
+  const Vector3d xA(4.0, 3.0, -1.0);
+
+  const Eigen::Isometry3d X_WT = CalcTransformationFromTriangleFrame(
+      p1, p2, p3, xA);
+  const Eigen::Isometry3d X_TW = X_WT.inverse();
+
+
+}
+
 
 }  // namespace
 }  // namespace boussinesq_solver

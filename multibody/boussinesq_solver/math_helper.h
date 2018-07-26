@@ -82,6 +82,20 @@ double CalcIntegralI2minus1Pminus1(
 /// @returns the integral Imn^(p). where m = 1, n = 0, p = -1.
 double CalcIntegralI10Pminus1(double theta_0, double theta_f, double alpha);
 
+/// This method returns the Isometric transform from the Triangle frame to the
+/// World frame. The origin of the triangle from is the projection of the field
+/// point on the the plane of the triangle. The z-axis is defined by the
+/// surface normal of the triangle (p1, p2, p3). THe x-axis is defined by
+/// the vector from p1 to p2.
+/// @param p1 The 3x1 Vector denotes the position of point 1 in the world frame
+/// @param p2 The 3x1 Vector denotes the position of point 2 in the world frame
+/// @param p3 The 3x1 Vector denotes the position of point 3 in the world frame
+/// @param xA The 3x1 Vector denotes the position of field point
+/// in the world frame
+/// @returns The Isometric transform from the Triangle frame to the Wold frame.
+Eigen::Isometry3d CalcTransformationFromTriangleFrame(
+    const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
+    const Eigen::Vector3d& p3, const Eigen::Vector3d& xA);
 
 }  // namespace boussinesq_solver
 }  // namespace multibody

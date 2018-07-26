@@ -102,6 +102,30 @@ double CalcIntegralI10Pminus1(double theta_0, double theta_f, double alpha) {
   return solf - sol0;
 }
 
+Eigen::Isometry3d CalcTransformationFromTriangleFrame(
+    const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
+    const Eigen::Vector3d& p3, const Eigen::Vector3d& xA) {
+  const Eigen::Vector3d u1 = p2 - p1;
+  const Eigen::Vector3d u2 = p3 - p1;
+  const Eigen::Vector3d area = u1.cross(u2);
+
+  const Eigen::Vector3d z_T = area / area.norm();
+  const Eigen::Vector3d x_T = u1 / u1.norm();
+  const Eigen::Vector3d y_T = z_T.cross(x_T);
+
+  Eigen::Matrix3d R_WT;
+  R_WT.col(0) = x_T;
+  R_WT.col(1) = y_T;
+  R_WT.col(2) = z_T;
+
+  const Eigen::Vector3d T0_W = xA + z_T.dot(p1 - xA) * z_T;
+  Eigen::Isometry3d X_WT;
+  X_WT.linear() = R_WT;
+  X_WT.translation() = T0_W;
+
+  return  X_WT;
+}
+
 }  // namespace boussinesq_solver
 }  // namespace multibody
 }  // namespace drake
