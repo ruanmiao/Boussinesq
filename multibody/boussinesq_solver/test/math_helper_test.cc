@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 
 #include "drake/common/eigen_types.h"
+#include "drake/common/test_utilities/eigen_matrix_compare.h"
+
 
 namespace drake {
 namespace multibody {
@@ -162,6 +164,7 @@ GTEST_TEST(CalcTransformationFromTriangleFrameTest, GeneralCase) {
   const Vector3d u12 = p2 - p1;
   const Vector3d u23 = p3 - p2;
   const Vector3d u31 = p1 - p3;
+  const Vector3d area = u12.cross(-u31) / 2;
 
   const Eigen::Isometry3d X_WT = CalcTransformationFromTriangleFrame(
       p1, p2, p3, xA);
@@ -172,14 +175,22 @@ GTEST_TEST(CalcTransformationFromTriangleFrameTest, GeneralCase) {
   const Eigen::Vector3d p2_T = X_TW * p2;
   const Eigen::Vector3d p3_T = X_TW * p3;
 
+  const Eigen::Vector3d W0(0.0, 0.0, 0.0);
+  const Eigen::Vector3d T0_W = X_WT * W0;
+  const Eigen::Vector3d lAT0_W = xA - T0_W;
+
   const Vector3d u12_T = p2_T - p1_T;
   const Vector3d u23_T = p3_T - p2_T;
   const Vector3d u31_T = p1_T - p3_T;
+  const Vector3d area_T = u12_T.cross(-u31_T) / 2;
 
   EXPECT_NEAR(
       xA_T(0), 0.0, 10 * std::numeric_limits<double>::epsilon());
   EXPECT_NEAR(
       xA_T(1), 0.0, 10 * std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(
+      xA_T(2), lAT0_W.dot(area/area.norm()), 10 * std::numeric_limits<double>::epsilon());
+
 
   EXPECT_NEAR(
       p1_T(2), 0.0, 10 * std::numeric_limits<double>::epsilon());
@@ -194,6 +205,16 @@ GTEST_TEST(CalcTransformationFromTriangleFrameTest, GeneralCase) {
       u23.norm(), u23_T.norm(), 10 * std::numeric_limits<double>::epsilon());
   EXPECT_NEAR(
       u31.norm(), u31_T.norm(), 10 * std::numeric_limits<double>::epsilon());
+
+  EXPECT_NEAR(
+      area.norm(), area_T.norm(), 10 * std::numeric_limits<double>::epsilon());
+
+//  EXPECT_TRUE(
+//      CompareMatrices(
+//          (u12.cross(u23)).norm(),
+//          (u12_T.cross(u23_T)).norm(),
+//          10 * std::numeric_limits<double>::epsilon(),
+//          MatrixCompareType::absolute));
 }
 
 
