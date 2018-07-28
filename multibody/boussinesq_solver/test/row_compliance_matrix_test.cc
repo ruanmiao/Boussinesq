@@ -87,44 +87,6 @@ GTEST_TEST(RowComplianceMatrixTest, IntegrantX) {
               10 * 7.640083832722066e-07);
 }
 
-/// The expected values for this test are the results by running Matlab. The
-/// precision (15 digits) of the expected values if the same as the "long"
-/// in Matlab
-/// The "expected" results is solved numerically by Matlab functions. Since
-/// the pressure filed is linear in the Cartesian coordinate, the results
-/// should be the same with the "expected" solution (numerical result).
-/// The tolerance here is set to the Matlab function tolerance.
-GTEST_TEST(RowComplianceMatrixTest, RowCompliance) {
-  double radius = 1;
-  int elements_per_r = 3;
-  std::pair<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3i>>
-      mesh_data = MeshCircle(
-      MatrixX<double>::Zero(2, 1), radius, elements_per_r);
-
-  const std::vector<Eigen::Vector3d>& points_in_mesh = mesh_data.first;
-  const std::vector<Eigen::Vector3i>& triangles_in_mesh = mesh_data.second;
-
-  MatrixX<double> compliance_p1 = CalcRowComplianceMatrix(
-      points_in_mesh, triangles_in_mesh, points_in_mesh[0], 1);
-  const int num_nodes = points_in_mesh.size();
-  MatrixX<double> expected(1, num_nodes);
-  expected << 0.076942193704121, 0.039344510906371, 0.039891145689070,
-      0.082382941863826, 0.011856947868779, 0.011912365320882,
-      0.042183238034851, 0.042635073157344, 0.013834919853994,
-      0.013896822634080, 0.034833004063650, 0.026696931010596,
-      0.026565000546978, 0.006791777665585, 0.006786732984313,
-      0.023337286932709, 0.010133659523478, 0.010121742809529,
-      0.005872812547253;
-  EXPECT_TRUE(
-      CompareMatrices(
-          compliance_p1,
-          expected,
-          10 * std::numeric_limits<double>::epsilon(),
-          MatrixCompareType::absolute));
-}
-
-
-
 }  // namespace
 }  // namespace boussinesq_solver
 }  // namespace multibody
