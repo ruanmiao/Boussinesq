@@ -5,7 +5,6 @@
 #include "drake/common/eigen_types.h"
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
 
-
 namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
@@ -189,7 +188,8 @@ GTEST_TEST(CalcTransformationFromTriangleFrameTest, GeneralCase) {
   EXPECT_NEAR(
       xA_T(1), 0.0, 10 * std::numeric_limits<double>::epsilon());
   EXPECT_NEAR(
-      xA_T(2), lAT0_W.dot(area/area.norm()), 10 * std::numeric_limits<double>::epsilon());
+      xA_T(2), lAT0_W.dot(area/area.norm()),
+      10 * std::numeric_limits<double>::epsilon());
 
 
   EXPECT_NEAR(

@@ -22,12 +22,25 @@ MatrixX<double> CalcRowComplianceMatrix(
     const Eigen::Vector3d& p2 = points_in_mesh[indexes(1)];
     const Eigen::Vector3d& p3 = points_in_mesh[indexes(2)];
 
-    const Eigen::Vector2d& p1_tilde = p1.head(2) - node_A.head(2);
-    const Eigen::Vector2d& p2_tilde = p2.head(2) - node_A.head(2);
-    const Eigen::Vector2d& p3_tilde = p3.head(2) - node_A.head(2);
 
-    Vector3<double> element_compliance = CalcGeneralTriangleCompliance(
-        p1_tilde, p2_tilde, p3_tilde, k_const);
+    const Eigen::Isometry3d X_WT = CalcTransformationFromTriangleFrame(
+        p1, p2, p3, node_A);
+    const Eigen::Isometry3d X_TW = X_WT.inverse();
+
+    const Eigen::Vector3d xA_T = X_TW * node_A;
+    const Eigen::Vector3d p1_T = X_TW * p1;
+    const Eigen::Vector3d p2_T = X_TW * p2;
+    const Eigen::Vector3d p3_T = X_TW * p3;
+    Vector3<double> element_compliance = CalcGeneralTriangleCompliance(xA_T(2),
+        p1_T.head(2), p2_T.head(2), p3_T.head(2), k_const);
+
+
+//    const Eigen::Vector2d& p1_tilde = p1.head(2) - node_A.head(2);
+//    const Eigen::Vector2d& p2_tilde = p2.head(2) - node_A.head(2);
+//    const Eigen::Vector2d& p3_tilde = p3.head(2) - node_A.head(2);
+//
+//    Vector3<double> element_compliance = CalcGeneralTriangleCompliance(
+//        p1_tilde, p2_tilde, p3_tilde, k_const);
 
     const double c1 = compliance(indexes(0));
     compliance(indexes(0)) = c1 + element_compliance(0);
