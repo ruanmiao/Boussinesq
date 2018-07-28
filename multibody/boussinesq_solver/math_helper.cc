@@ -123,7 +123,7 @@ Eigen::Isometry3d CalcTransformationFromTriangleFrame(
   X_WT.linear() = R_WT;
   X_WT.translation() = T0_W;
 
-  return  X_WT;
+  return X_WT;
 }
 
 }  // namespace boussinesq_solver

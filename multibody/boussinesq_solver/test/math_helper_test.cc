@@ -159,11 +159,41 @@ GTEST_TEST(CalcTransformationFromTriangleFrameTest, GeneralCase) {
   const Vector3d p3(5.0, 8.0, 2.5);
   const Vector3d xA(4.0, 3.0, -1.0);
 
+  const Vector3d u12 = p2 - p1;
+  const Vector3d u23 = p3 - p2;
+  const Vector3d u31 = p1 - p3;
+
   const Eigen::Isometry3d X_WT = CalcTransformationFromTriangleFrame(
       p1, p2, p3, xA);
   const Eigen::Isometry3d X_TW = X_WT.inverse();
 
+  const Eigen::Vector3d xA_T = X_TW * xA;
+  const Eigen::Vector3d p1_T = X_TW * p1;
+  const Eigen::Vector3d p2_T = X_TW * p2;
+  const Eigen::Vector3d p3_T = X_TW * p3;
 
+  const Vector3d u12_T = p2_T - p1_T;
+  const Vector3d u23_T = p3_T - p2_T;
+  const Vector3d u31_T = p1_T - p3_T;
+
+  EXPECT_NEAR(
+      xA_T(0), 0.0, 10 * std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(
+      xA_T(1), 0.0, 10 * std::numeric_limits<double>::epsilon());
+
+  EXPECT_NEAR(
+      p1_T(2), 0.0, 10 * std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(
+      p2_T(2), 0.0, 10 * std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(
+      p3_T(2), 0.0, 10 * std::numeric_limits<double>::epsilon());
+
+  EXPECT_NEAR(
+      u12.norm(), u12_T.norm(), 10 * std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(
+      u23.norm(), u23_T.norm(), 10 * std::numeric_limits<double>::epsilon());
+  EXPECT_NEAR(
+      u31.norm(), u31_T.norm(), 10 * std::numeric_limits<double>::epsilon());
 }
 
 
