@@ -154,7 +154,8 @@ Eigen::VectorXd GetPressureIntegrandX(
   return pressures;
 }
 
-bool OutputMeshToVTK(const std::vector<Vector3<double>>& points_in_mesh,
+bool OutputMeshToVTK(
+    const std::vector<Vector3<double>>& points_in_mesh,
                      const std::vector<Vector3<int>>& triangles_in_mesh,
                      const VectorX<double>& values) {
   const int num_nodes = points_in_mesh.size();

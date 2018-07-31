@@ -68,7 +68,8 @@ Eigen::VectorXd GetPressureIntegrandX(
 /// @param triangles_in_mesh Indexes of points of triangles in the mesh
 /// @param filename (with .vtk extension)
 /// @returns none
-bool OutputMeshToVTK(const std::vector<Vector3<double>>& points_in_mesh,
+bool OutputMeshToVTK(
+    const std::vector<Vector3<double>>& points_in_mesh,
                      const std::vector<Vector3<int>>& triangles_in_mesh,
                      const VectorX<double>& values);
 
