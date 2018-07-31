@@ -42,7 +42,7 @@ drake_cc_library(
     name = "penetration_as_triangle_pair",
     srcs = [],
     hdrs = ["penetration_as_triangle_pair.h"],
-    deps= [
+    deps = [
         "//common:essential",
         "//geometry:geometry_ids",
     ],
