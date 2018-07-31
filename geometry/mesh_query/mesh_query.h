@@ -13,6 +13,10 @@ namespace drake {
 namespace geometry {
 namespace mesh_query {
 
+std::vector<Vector3<double>> CalcMeshFaceNormals(
+    const std::vector<Vector3<double>>& points_A,
+    const std::vector<Vector3<int>>& triangles);
+
 template <typename T>
 struct PointMeshDistance {
   DRAKE_DEFAULT_COPY_AND_MOVE_AND_ASSIGN(PointMeshDistance)
