@@ -10,14 +10,81 @@ namespace drake {
 namespace geometry {
 namespace mesh_query {
 
+// Tolerance used to test when the distance is close to zero. This number is
+// made sligthly larger than zero to avoid divission by zero when computing a
+// normalized vector between a query point Q and its projection P on the surface
+// of a mesh.
+const double kNearSurfaceTolerance = 10 *
+    std::numeric_limits<double>::epsilon();
+
 std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
-    const Isometry3<double>& X_FA,
-    const std::vector<Vector3<double>>& meshA_points_A,
-    const std::vector<Vector3<int>>& meshA_triangles,
-    const Isometry3<double>& X_FB,
-    const std::vector<Vector3<double>>& meshB_points_B,
-    const std::vector<Vector3<int>>& meshB_triangles) {
+    const Isometry3<double>& X_WA, const Mesh<double>& meshA,
+    const Isometry3<double>& X_WB, const Mesh<double>& meshB) {
   std::vector<PenetrationAsTrianglePair<double>> pairs;
+
+  pairs.clear();
+
+  auto Mesh1NodesVsMesh2Surface = [&pairs](
+      const Isometry3<double>& X_WM1, const Mesh<double>& mesh1,
+      const Isometry3<double>& X_WM2, const Mesh<double>& mesh2) {
+    for (size_t node_index = 0; node_index < mesh1.points_G.size(); ++node_index) {
+      const Vector3<double>& p_AQ = mesh1.points_G[node_index];
+      const Vector3<double> p_WQ = X_WM1 * p_AQ;
+
+      PointMeshDistance<double> point_mesh_result;
+
+      const bool is_inside = CalcPointToMeshNegativeDistance(
+          X_WM2, mesh2.points_G, mesh2.triangles, mesh2.normals_G, p_WQ,
+          &point_mesh_result);
+
+      if (is_inside) {
+        PenetrationAsTrianglePair<double> result;
+
+        result.signed_distance = point_mesh_result.distance;
+
+        //////////////////////////////////////////////////////////////////////////
+        // MESH A INFO
+        //////////////////////////////////////////////////////////////////////////
+
+        result.meshA_index = mesh1.mesh_index;
+        result.triangle_A = mesh1.node_element[node_index];
+        result.p_WoAs_W = p_WQ;
+
+        const Vector3<double> p_WP = point_mesh_result.p_FP;
+        const double distance = point_mesh_result.distance;
+
+        // For now we are assuming the distance is zero. Therefore verify this.
+        DRAKE_DEMAND(distance <= -kNearSurfaceTolerance);
+
+        result.normal_A_W = (p_WQ - p_WP) / (-distance);
+
+        // Since we assume that node_element points to local node "zero" in the
+        // mesh A triangle, the barycentric coordinates are 1, 0, 0.
+        result.barycentric_A << 1.0, 0.0, 0.0;
+
+        //////////////////////////////////////////////////////////////////////////
+        // MESH B INFO
+        //////////////////////////////////////////////////////////////////////////
+        result.meshB_index = mesh2.mesh_index;
+        result.triangle_B = point_mesh_result.triangle_index;
+        result.p_WoBs_W = point_mesh_result.p_FP;
+        result.barycentric_B = point_mesh_result.barycentric_P;
+        result.normal_B_W = point_mesh_result.normal_F;
+
+        pairs.push_back(result);
+      }
+    }
+
+  };
+
+  // Scan each node on Mesh A and perform a point-mesh distance query with
+  // mesh B.
+  Mesh1NodesVsMesh2Surface(X_WA, meshA, X_WB, meshB);
+
+  // Reverse roles of mesh A and B. Now scan each node on Mesh B and perform a
+  // point-mesh distance query with mesh A.
+  Mesh1NodesVsMesh2Surface(X_WB, meshB, X_WA, meshA);
+
   return pairs;
 }
 
@@ -98,7 +165,8 @@ bool CalcPointToMeshNegativeDistance(
     const double plane_distance = normal_A.dot(p_AQ - p_AP1);
 
     // point is outside convex mesh. Thus we are done.
-    if (plane_distance > 0) return false;
+    // The check is made against a small tolerance to avoid zero distances.
+    if (plane_distance > -kNearSurfaceTolerance) return false;
 
     // Save the triangle with the minimum distance.
     if (plane_distance > max_neg_dist) {

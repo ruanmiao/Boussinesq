@@ -13,6 +13,26 @@ namespace drake {
 namespace geometry {
 namespace mesh_query {
 
+template <typename T>
+struct Mesh {
+  // A unique identifier within a model containing seeral meshes.
+  int mesh_index{-1};  // Invalid initialization to a negative value.
+
+  // Mesh nodes measured and expressed in a the mesh geometry frame G.
+  std::vector<Vector3<double>> points_G;
+  // Mesh triangles.
+  std::vector<Vector3<int>>& triangles;
+  // Mesh face normals expressed in the mesh geometry frame G, the same as the
+  // nodes.
+  std::vector<Vector3<double>> normals_G;
+
+  // A conveniently pre-computed array such that for a node_index then
+  // node_element[node_index] is an element of which node_index is a vertex.
+  // The element assigned to node_index is arbitrary. All we know is the node
+  // "zero" in local element indexing.
+  std::vector<int> node_element;
+};
+
 std::vector<Vector3<double>> CalcMeshFaceNormals(
     const std::vector<Vector3<double>>& points_A,
     const std::vector<Vector3<int>>& triangles);

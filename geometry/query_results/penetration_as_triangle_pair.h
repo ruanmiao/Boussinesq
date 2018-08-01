@@ -62,39 +62,41 @@ template <typename T>
 struct PenetrationAsTrianglePair {
   DRAKE_DEFAULT_COPY_AND_MOVE_AND_ASSIGN(PenetrationAsTrianglePair)
 
-  const int meshA_index;
+  PenetrationAsTrianglePair() = default;
+
+  int meshA_index;
 
   /** A reference to the triangle on A on which As lies. Its lifespan is that
   of the underlying mesh. */
-  const Vector3<int> triangle_A;
+  int triangle_A;
 
   /** Position vector for a point Aₛ on the surface of A measured and expressed
    in the world frame. */
-  const Vector3<T> p_WoAs_W;
+  Vector3<T> p_WoAs_W;
 
   /** The outward facing normal of mesh A at Aₛ expressed in the world frame. */
-  const Vector3<T> normal_A_W;
+  Vector3<T> normal_A_W;
 
   /** The barycentric coordinates of Aₛ on triangle_A.  */
-  const Vector3<T> barycentric_A;
+  Vector3<T> barycentric_A;
 
-  const int meshB_index;
+  int meshB_index;
 
   /** A reference to the triangle of mesh B on which Bs lies.  */
-  const Vector3<int> triangle_B;
+  int triangle_B;
 
   /** Position vector for a point Bₛ on the surface of B measured and expressed
   in the world frame. */
-  const Vector3<T> p_WoBs_W;
+  Vector3<T> p_WoBs_W;
 
   /** The barycentric coordinates of Bₛ on triangle_B.  */
-  const Vector3<T> barycentric_B;
+  Vector3<T> barycentric_B;
 
   /** The outward facing normal of mesh B at Bₛ expressed in the world frame. */
-  const Vector3<T> normal_B_W;
+  Vector3<T> normal_B_W;
 
   /** The signed distance from As to Bs: `φ = S(Aₛ, Bₛ)|Aₛ - Bₛ|`.  */
-  const T signed_distance;
+  T signed_distance;
 
 };
 

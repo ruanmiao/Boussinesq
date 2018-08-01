@@ -230,31 +230,31 @@ GTEST_TEST(MeshQueries, PointInsideCubeMesh) {
 
   expected_results.triangle_index = -1;
   {
-    data.p_WQ << kEpsilon, 0.5, 0.5;
+    data.p_WQ << 20 * kEpsilon, 0.5, 0.5;
     expected_results.is_inside = true;
-    expected_results.distance = 0.0;
+    expected_results.distance = -20 * kEpsilon;
     expected_results.normal_W = -Vector3d::UnitX();
     expected_results.p_WP << 0.0, 0.5, 0.5;
     VerifyPointToMeshQuery(data, expected_results);
   }
 
   {
-    data.p_WQ << -kEpsilon, 0.5, 0.5;
+    data.p_WQ << -20 * kEpsilon, 0.5, 0.5;
     expected_results.is_inside = false;
     VerifyPointToMeshQuery(data, expected_results);
   }
 
   {
-    data.p_WQ << 0.1, 1.0-kEpsilon, 0.99;
+    data.p_WQ << 0.1, 1.0-20 * kEpsilon, 0.99;
     expected_results.is_inside = true;
-    expected_results.distance = 0.0;
+    expected_results.distance = -20 * kEpsilon;
     expected_results.normal_W = Vector3d::UnitY();
     expected_results.p_WP << 0.1, 1.0, 0.99;
     VerifyPointToMeshQuery(data, expected_results);
   }
 
   {
-    data.p_WQ << 0.1, 1.0+kEpsilon, 0.99;
+    data.p_WQ << 0.1, 1.0+20 * kEpsilon, 0.99;
     expected_results.is_inside = false;
     VerifyPointToMeshQuery(data, expected_results);
   }
