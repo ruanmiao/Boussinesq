@@ -95,14 +95,20 @@ bool CalcPointToMeshNegativeDistance(
     return plane_normal_A.dot(area_vector_A) / 2.0;
   };
 
+  // Results from the first scan over triangles:
   double max_neg_dist = -std::numeric_limits<double>::infinity();
   int max_neg_dist_triangle = -1;
+  Vector3<double> p_AP;
+  double A1, A2, A3;
+
   for (size_t triangle_index = 0;
        triangle_index < triangles.size(); ++triangle_index) {
     const Vector3<int>& triangle = triangles[triangle_index];
     const Vector3<double>& normal_A = triangle_normals_A[triangle_index];
 
     const Vector3<double>& p_AP1 = points_A[triangle[0]];
+    const Vector3<double>& p_AP2 = points_A[triangle[1]];
+    const Vector3<double>& p_AP3 = points_A[triangle[2]];
 
     // Distance from point Q to the plane on which the triangle lies.
     const double plane_distance = normal_A.dot(p_AQ - p_AP1);
@@ -110,9 +116,26 @@ bool CalcPointToMeshNegativeDistance(
     // point is outside convex mesh. Thus we are done.
     if (plane_distance > 0) return false;
 
+    // Save the triangle with the minimum distance.
     if (plane_distance > max_neg_dist) {
+      // point on the triangle's plane.
+      const Vector3<double> p_AP_local = p_AQ - plane_distance * normal_A;
+      const double A1_local = CalcTriangleArea(p_AP2, p_AP3, p_AP_local, normal_A);
+      if (A1_local < 0) continue; // Outside triangle.
+      const double A2_local = CalcTriangleArea(p_AP3, p_AP1, p_AP_local, normal_A);
+      if (A2_local < 0) continue; // Outside triangle.
+      const double A3_local = CalcTriangleArea(p_AP1, p_AP2, p_AP_local, normal_A);
+      if (A3_local < 0) continue; // Outside triangle.
+
+      // If here, the projection lies inside the triangle and therefore we save
+      // the data that we already computed for later.
+
       max_neg_dist = plane_distance;
       max_neg_dist_triangle = triangle_index;
+      A1 = A1_local;
+      A2 = A2_local;
+      A3 = A3_local;
+      p_AP = p_AP_local;
     }
   }
 
@@ -137,11 +160,11 @@ bool CalcPointToMeshNegativeDistance(
   const Vector3<double>& normal_A = triangle_normals_A[triangle_index];
 
   // point on the mesh.
-  const Vector3<double> p_AP = p_AQ - distance * normal_A;
+  //const Vector3<double> p_AP = p_AQ - distance * normal_A;
 
   // Triangle indexes.
   const Vector3<int>& triangle = triangles[triangle_index];
-
+#if 0
   // Compute the barycentric coordinates.
   const Vector3<double>& p_AP1 = points_A[triangle[0]];
   const Vector3<double>& p_AP2 = points_A[triangle[1]];
@@ -150,6 +173,7 @@ bool CalcPointToMeshNegativeDistance(
   const double A1 = CalcTriangleArea(p_AP2, p_AP3, p_AP, normal_A);
   const double A2 = CalcTriangleArea(p_AP3, p_AP1, p_AP, normal_A);
   const double A3 = CalcTriangleArea(p_AP1, p_AP2, p_AP, normal_A);
+#endif
 
   // The three areas must be positive when inside a convex mesh.
   DRAKE_DEMAND(A1 >= 0);

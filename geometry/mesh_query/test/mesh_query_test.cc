@@ -139,13 +139,44 @@ struct PointToMeshQueryData {
 struct PointToMeshQueryResults {
   // `true` if the query point Q is inside the mesh.
   bool is_inside;
+
+  // Signed distance from point Q to the mesh.
+  double distance;
+
+  // Negative implies not checked.
+  int triangle_index{-1};
+
+  Vector3d normal_W;
+
+  Vector3d p_WP;
 };
 
 void VerifyPointToMeshQuery(
-    const PointToMeshQueryData& data, PointToMeshQueryResults results) {
-  EXPECT_EQ(CalcPointToMeshNegativeDistance(
-      data.X_WG, data.points_G, data.triangles, data.normals_G, data.p_WQ),
-            results.is_inside);
+    const PointToMeshQueryData& data, PointToMeshQueryResults expected_results) {
+  PointMeshDistance<double> results;
+  const bool is_inside = CalcPointToMeshNegativeDistance(
+      data.X_WG, data.points_G, data.triangles, data.normals_G, data.p_WQ,
+      &results);
+  EXPECT_EQ(is_inside, expected_results.is_inside);
+
+  const double kTolerance = 10 * std::numeric_limits<double>::epsilon();
+
+  EXPECT_NEAR(results.distance, expected_results.distance, kTolerance);
+
+  // Do not verify the returned data (garage) if the point is outside.
+  if (!expected_results.is_inside) return;
+
+  if (expected_results.triangle_index >= 0) {
+    EXPECT_EQ(results.triangle_index, expected_results.triangle_index);
+  }
+
+  EXPECT_TRUE(CompareMatrices(
+      results.normal_F, expected_results.normal_W,
+      kTolerance, MatrixCompareType::relative));
+
+  EXPECT_TRUE(CompareMatrices(
+      results.p_FP, expected_results.p_WP,
+      kTolerance, MatrixCompareType::relative));
 }
 
 GTEST_TEST(MeshQueries, PointInsideCubeMesh) {
@@ -169,14 +200,32 @@ GTEST_TEST(MeshQueries, PointInsideCubeMesh) {
   PointToMeshQueryResults expected_results;
 
   {
-    data.p_WQ << 0.5, 0.5, 0.5;
+    data.p_WQ << 0.35, 0.4, 0.5;
     expected_results.is_inside = true;
+    expected_results.distance = -0.35;
+    expected_results.triangle_index = 8;
+    expected_results.normal_W = -Vector3d::UnitX();
+    expected_results.p_WP << 0.0, 0.4, 0.5;
     VerifyPointToMeshQuery(data, expected_results);
   }
 
   {
+    data.p_WQ << 0.1, 0.45, 0.95;
+    expected_results.is_inside = true;
+    expected_results.distance = -0.05;
+    expected_results.triangle_index = 3;
+    expected_results.normal_W = Vector3d::UnitZ();
+    expected_results.p_WP << 0.1, 0.45, 1.0;
+    VerifyPointToMeshQuery(data, expected_results);
+  }
+
+  expected_results.triangle_index = -1;
+  {
     data.p_WQ << kEpsilon, 0.5, 0.5;
     expected_results.is_inside = true;
+    expected_results.distance = 0.0;
+    expected_results.normal_W = -Vector3d::UnitX();
+    expected_results.p_WP << 0.0, 0.5, 0.5;
     VerifyPointToMeshQuery(data, expected_results);
   }
 
@@ -189,6 +238,9 @@ GTEST_TEST(MeshQueries, PointInsideCubeMesh) {
   {
     data.p_WQ << 0.1, 1.0-kEpsilon, 0.99;
     expected_results.is_inside = true;
+    expected_results.distance = 0.0;
+    expected_results.normal_W = Vector3d::UnitY();
+    expected_results.p_WP << 0.1, 1.0, 0.99;
     VerifyPointToMeshQuery(data, expected_results);
   }
 
