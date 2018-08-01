@@ -25,6 +25,18 @@ drake_cc_binary(
     ],
 )
 
+drake_cc_binary(
+    name = "output_mesh_query",
+    srcs = ["output_mesh_query.cc"],
+    data = [":models"],
+    deps = [
+        "//common:find_resource",
+        "//geometry/mesh_query:vtk_io",
+        "//multibody/shapes",
+        "@gflags",
+    ],
+)
+
 install_data()
 
 add_lint_tests()

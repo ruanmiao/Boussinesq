@@ -62,7 +62,6 @@ void OutputMeshToVTK(
   // Write the points data.
   for (const auto& point : points) {
     file << fmt::format("{:.8f} {:.8f} {:.8f}\n", point[0], point[1], point[2]);
-    //file << point[0] << " " << point[1] << " " << point[2] << std::endl;
   }
   file << std::endl;
 
@@ -77,13 +76,47 @@ void OutputMeshToVTK(
   file << std::endl;
 
   // VTK needs us to spell out the element type for each element.
+  // Cell type = 5 is for triangles.
   file << "CELL_TYPES " << num_tris << std::endl;
   for (int i_tri = 0; i_tri < num_tris; i_tri++) {
     file << "5" << std::endl;
   }
   file << std::endl;
 
+  file.close();
+}
+
+void OutputScatteredPointsToVTK(
+    const std::string& file_name,
+    const std::vector<Vector3<double>>& points) {
+  const int num_nodes = points.size();
+
+  std::ofstream file(file_name);
+
+  // Header for the VTK file.
+  file << "# vtk DataFile Version 3.0" << std::endl;
+  file << "Visualize mesh data" << std::endl;
+  file << "ASCII" << std::endl;
   file << std::endl;
+  file << "DATASET UNSTRUCTURED_GRID" << std::endl;
+
+  // Header fot he points data.
+  file << "POINTS " << num_nodes << " double" << std::endl;
+
+  // Write the points data.
+  for (const auto& point : points) {
+    file << fmt::format("{:.8f} {:.8f} {:.8f}\n", point[0], point[1], point[2]);
+  }
+  file << std::endl;
+
+  // VTK needs us to spell out the element type for each element.
+  // Cell type = 1 is for a single point.
+  file << "CELL_TYPES " << num_nodes << std::endl;
+  for (int i_tri = 0; i_tri < num_nodes; i_tri++) {
+    file << "1" << std::endl;
+  }
+  file << std::endl;
+
   file.close();
 }
 

@@ -25,6 +25,7 @@ int DoMain() {
   mesh_loader.LoadObjFile(&points, &triangles);
 
   OutputMeshToVTK("sphere.vtk", points, triangles);
+  OutputScatteredPointsToVTK("sphere_points.vtk", points);
   return 0;
 }
 
