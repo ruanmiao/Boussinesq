@@ -9,6 +9,7 @@ namespace geometry {
 namespace mesh_query {
 namespace {
 
+using Eigen::Isometry3d;
 using Eigen::Vector3d;
 using Eigen::Vector3i;
 
@@ -55,7 +56,7 @@ std::pair<std::vector<Vector3d>, std::vector<Vector3i>> MakeCube() {
   return std::make_pair(points, triangles);
 }
 
-GTEST_TEST(VisualMaterial, CalcMeshFaceNormals) {
+GTEST_TEST(MeshQueries, CalcMeshFaceNormals) {
   const double kTolerance = 10 * std::numeric_limits<double>::epsilon();
 
   // Make the mesh for a simple cube.
@@ -116,6 +117,98 @@ GTEST_TEST(VisualMaterial, CalcMeshFaceNormals) {
   EXPECT_TRUE(CompareMatrices(
       normals_W[11], Vector3d::UnitX(),
       kTolerance, MatrixCompareType::relative));
+}
+
+struct PointToMeshQueryData {
+  // Mesh nodes expressed in the mesh geometry frame G.
+  std::vector<Vector3d> points_G;
+
+  // Mesh triangles.
+  std::vector<Vector3i> triangles;
+
+  // Mesh normals expressed in the G frame.
+  std::vector<Vector3d> normals_G;
+
+  // Pose of the mesh geometry G in the world frame W.
+  Isometry3d X_WG{Isometry3d::Identity()};
+
+  // Query point in the world frame W.
+  Vector3d p_WQ;
+};
+
+struct PointToMeshQueryResults {
+  // `true` if the query point Q is inside the mesh.
+  bool is_inside;
+};
+
+void VerifyPointToMeshQuery(
+    const PointToMeshQueryData& data, PointToMeshQueryResults results) {
+  EXPECT_EQ(CalcPointToMeshNegativeDistance(
+      data.X_WG, data.points_G, data.triangles, data.normals_G, data.p_WQ),
+            results.is_inside);
+}
+
+GTEST_TEST(MeshQueries, PointInsideCubeMesh) {
+  const double kEpsilon = std::numeric_limits<double>::epsilon();
+
+  // Make a mesh with points measured and expressed in a "geometry" frame G.
+  std::vector<Vector3d> points_G;
+  std::vector<Vector3i> triangles;
+  std::tie(points_G, triangles) = MakeCube();
+  ASSERT_EQ(points_G.size(), 8);
+  ASSERT_EQ(triangles.size(), 12);
+  std::vector<Vector3<double>> normals_G =
+      CalcMeshFaceNormals(points_G, triangles);
+
+  PointToMeshQueryData data;
+  data.X_WG = Isometry3d::Identity();
+  data.points_G = points_G;
+  data.triangles = triangles;
+  data.normals_G = normals_G;
+
+  PointToMeshQueryResults expected_results;
+
+  {
+    data.p_WQ << 0.5, 0.5, 0.5;
+    expected_results.is_inside = true;
+    VerifyPointToMeshQuery(data, expected_results);
+  }
+
+  {
+    data.p_WQ << kEpsilon, 0.5, 0.5;
+    expected_results.is_inside = true;
+    VerifyPointToMeshQuery(data, expected_results);
+  }
+
+  {
+    data.p_WQ << -kEpsilon, 0.5, 0.5;
+    expected_results.is_inside = false;
+    VerifyPointToMeshQuery(data, expected_results);
+  }
+
+  {
+    data.p_WQ << 0.1, 1.0-kEpsilon, 0.99;
+    expected_results.is_inside = true;
+    VerifyPointToMeshQuery(data, expected_results);
+  }
+
+  {
+    data.p_WQ << 0.1, 1.0+kEpsilon, 0.99;
+    expected_results.is_inside = false;
+    VerifyPointToMeshQuery(data, expected_results);
+  }
+
+  {
+    data.p_WQ << 1.2, 3.0, 0.5;
+    expected_results.is_inside = false;
+    VerifyPointToMeshQuery(data, expected_results);
+  }
+
+  {
+    data.p_WQ << -1.2, 0.5, -0.2;
+    expected_results.is_inside = false;
+    VerifyPointToMeshQuery(data, expected_results);
+  }
 }
 
 }  // namespace

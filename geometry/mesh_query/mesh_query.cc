@@ -121,6 +121,8 @@ bool CalcPointToMeshNegativeDistance(
   DRAKE_DEMAND(max_neg_dist_triangle >= 0);
   DRAKE_DEMAND(max_neg_dist <= 0);
 
+  if (point_mesh_distance_ptr == nullptr) return true;
+
   //////////////////////////////////////////////////////////////////
   // We know we are inside. Compute additional information and exit:
   //////////////////////////////////////////////////////////////////

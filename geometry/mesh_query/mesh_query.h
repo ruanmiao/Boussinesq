@@ -67,7 +67,7 @@ bool CalcPointToMeshNegativeDistance(
     const std::vector<Vector3<int>>& triangles,
     const std::vector<Vector3<double>>& triangle_normals_A,
     const Vector3<double>& p_FQ,
-    PointMeshDistance<double>* point_mesh_distance_ptr);
+    PointMeshDistance<double>* point_mesh_distance_ptr = nullptr);
 
 }  // namespace mesh_query
 }  // namespace geometry
