@@ -49,22 +49,6 @@ std::vector<Vector3<double>> CalcMeshFaceNormals(
   return normals;
 }
 
-#if 0
-// Q must live in the plane of the triangle.
-Vector3<double> CalcBarycentricCoordinates(
-    const Vector3<double>& p_AP1,
-    const Vector3<double>& p_AP2,
-    const Vector3<double>& p_AP3,
-    const Vector3<double>& normal_A,
-    const Vector3<double>& p_AQ) {
-  const Vector3<double> p_AP =
-
-
-
-}
-#endif
-
-
 bool CalcPointToMeshNegativeDistance(
     const Isometry3<double>& X_FA,
     const std::vector<Vector3<double>>& points_A,
@@ -164,16 +148,6 @@ bool CalcPointToMeshNegativeDistance(
 
   // Triangle indexes.
   const Vector3<int>& triangle = triangles[triangle_index];
-#if 0
-  // Compute the barycentric coordinates.
-  const Vector3<double>& p_AP1 = points_A[triangle[0]];
-  const Vector3<double>& p_AP2 = points_A[triangle[1]];
-  const Vector3<double>& p_AP3 = points_A[triangle[2]];
-
-  const double A1 = CalcTriangleArea(p_AP2, p_AP3, p_AP, normal_A);
-  const double A2 = CalcTriangleArea(p_AP3, p_AP1, p_AP, normal_A);
-  const double A3 = CalcTriangleArea(p_AP1, p_AP2, p_AP, normal_A);
-#endif
 
   // The three areas must be positive when inside a convex mesh.
   DRAKE_DEMAND(A1 >= 0);

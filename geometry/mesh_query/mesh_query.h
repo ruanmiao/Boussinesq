@@ -23,16 +23,6 @@ struct PointMeshDistance {
 
   PointMeshDistance() = default;
 
-#if 0
-  PointMeshDistance(
-      int triangle_index, const T& distance, const Vector3<T>& p_FP,
-      const Vector3<T>& normal_F, const Vector3<int>& triangle,
-      const Vector3<T>& barycentric_P) :
-      triangle_index(triangle_index), distance(distance), p_FP(p_FP),
-      normal_F(normal_F), triangle(triangle),
-      pointP_barycentric(barycentric_P) {}
-#endif
-
   int triangle_index;
 
   // Distance from query point Q to point on the mesh P.
