@@ -1,10 +1,8 @@
 #include "drake/multibody/boussinesq_solver/math_helper.h"
 
 #include <limits>
-#include "drake/common/drake_assert.h"
 
-#include <iostream>
-#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
+#include "drake/common/drake_assert.h"
 
 namespace drake {
 namespace multibody {
@@ -121,12 +119,6 @@ Eigen::Isometry3d CalcTransformationFromTriangleFrame(
   const Eigen::Vector3d u2 = p3 - p1;
   const Eigen::Vector3d area = u1.cross(u2);
 
-  if (fabs(area.norm()) < 10 * std::numeric_limits<double>::epsilon()) {
-    PRINT_VAR(p1);
-    PRINT_VAR(p2);
-    PRINT_VAR(p3);
-    PRINT_VAR(xA);
-  }
   DRAKE_ASSERT(fabs(area.norm()) > 10 * std::numeric_limits<double>::epsilon());
 
   const Eigen::Vector3d z_T = area / area.norm();

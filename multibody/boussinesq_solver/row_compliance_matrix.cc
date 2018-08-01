@@ -1,16 +1,10 @@
 #include "drake/multibody/boussinesq_solver/row_compliance_matrix.h"
 
-#include "drake/multibody/boussinesq_solver/integral_general_triangle.h"
-#include "drake/multibody/boussinesq_solver/math_helper.h"
-
 #include <limits>
 
 #include "drake/common/drake_assert.h"
-
-#include <fstream>
-#include <iostream>
-#include <string>
-#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
+#include "drake/multibody/boussinesq_solver/integral_general_triangle.h"
+#include "drake/multibody/boussinesq_solver/math_helper.h"
 
 namespace drake {
 namespace multibody {
@@ -46,29 +40,8 @@ MatrixX<double> CalcRowComplianceMatrix(
     Vector3<double> element_compliance = CalcGeneralTriangleCompliance(xA_T(2),
         p1_T.head(2), p2_T.head(2), p3_T.head(2), k_const);
 
-    if(fabs(element_compliance.norm()) >= std::numeric_limits<double>::infinity()) {
-
-      std::ofstream debug_log;
-      debug_log.open("nan_error.txt");
-      debug_log << "p1_T" << p1_T(0) << p1_T(1) << p1_T(2) << std::endl;
-      debug_log << "p2_T" << p2_T(0) << p2_T(1) << p2_T(2) << std::endl;
-      debug_log << "p3_T" << p3_T(0) << p3_T(1) << p3_T(2) << std::endl;
-      debug_log << "xA_T" << xA_T(0) << xA_T(1) << xA_T(2) << std::endl;
-      debug_log.close();
-//      PRINT_VAR(p1_T);
-//      PRINT_VAR(p2_T);
-//      PRINT_VAR(p3_T);
-//      PRINT_VAR(xA_T);
-    }
-    DRAKE_ASSERT(fabs(element_compliance.norm()) < std::numeric_limits<double>::infinity());
-
-
-//    const Eigen::Vector2d& p1_tilde = p1.head(2) - node_A.head(2);
-//    const Eigen::Vector2d& p2_tilde = p2.head(2) - node_A.head(2);
-//    const Eigen::Vector2d& p3_tilde = p3.head(2) - node_A.head(2);
-//
-//    Vector3<double> element_compliance = CalcGeneralTriangleCompliance(
-//        p1_tilde, p2_tilde, p3_tilde, k_const);
+    DRAKE_ASSERT(fabs(element_compliance.norm()) <
+        std::numeric_limits<double>::infinity());
 
     const double c1 = compliance(indexes(0));
     compliance(indexes(0)) = c1 + element_compliance(0);

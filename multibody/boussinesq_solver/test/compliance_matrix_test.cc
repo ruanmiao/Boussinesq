@@ -1,15 +1,15 @@
 #include "drake/multibody/boussinesq_solver/compliance_matrix.h"
 
-#include <gtest/gtest.h>
+#include <iostream>
 #include <limits>
 
+#include <gtest/gtest.h>
+
+#include "drake/common/drake_assert.h"
 #include "drake/common/eigen_types.h"
 #include "drake/common/test_utilities/eigen_matrix_compare.h"
 #include "drake/multibody/boussinesq_solver/test_helper.h"
 #include "drake/solvers/moby_lcp_solver.h"
-#include "drake/common/drake_assert.h"
-
-#include <iostream>
 #define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
 
 namespace drake {
@@ -81,9 +81,6 @@ GTEST_TEST(ComplianceMatrixTest, ShpereContact) {
 /// its tolerance being 1e-8.
 /// The tolerance here is set accordance to the Matlab function tolerance.
 GTEST_TEST(ComplianceMatrixTest, ShpereContactRotated) {
-//  const double r_mesh = 1.0;
-//  const int elements_per_r = 4;
-
   const double r_mesh = 1.0;
   const int elements_per_r = 10;
 
@@ -101,7 +98,6 @@ GTEST_TEST(ComplianceMatrixTest, ShpereContactRotated) {
 
   // O is the origin of the (planar) circle mesh.
   const Eigen::Vector3d p_WO(1.0, -0.5, 3.2);
-//  const Eigen::Vector3d p_WO(0.0, -0.5, 3.2);
   Eigen::Isometry3d X_WT = Isometry3d::Identity();
   X_WT.linear() = R_WT;
   X_WT.translation() = p_WO;
@@ -114,41 +110,21 @@ GTEST_TEST(ComplianceMatrixTest, ShpereContactRotated) {
     mesh_points_W[node_index] = X_WT * mesh_points_T[node_index];
   }
 
-  int num_triangles = triangles.size();
-  for (int tri_index = 0; tri_index < num_triangles; ++tri_index) {
-    const Vector3<int>& tri = triangles[tri_index];
-    const Vector3d u1 = mesh_points_W[tri(1)] - mesh_points_W[tri(0)];
-    const Vector3d u2 = mesh_points_W[tri(2)] - mesh_points_W[tri(0)];
-    const Vector3d area = u1.cross(u2);
-    if (fabs(area.norm()) < 10 * std::numeric_limits<double>::epsilon()) {
-      PRINT_VAR(tri);
-
-      PRINT_VAR(mesh_points_W[tri(0)]);
-      PRINT_VAR(mesh_points_W[tri(1)]);
-      PRINT_VAR(mesh_points_W[tri(2)]);
-
-      PRINT_VAR(mesh_points_T[tri(0)]);
-      PRINT_VAR(mesh_points_T[tri(1)]);
-      PRINT_VAR(mesh_points_T[tri(2)]);
-    }
-    DRAKE_ASSERT(fabs(area.norm()) > 10 * std::numeric_limits<double>::epsilon());
-  }
-
   OutputMeshToVTK(mesh_points_W, triangles, VectorX<double>::Zero(num_nodes));
 
   MatrixX<double> compliance = CalcComplianceMatrix(
             mesh_points_W, triangles, 1.0);
 
-  const double kTolenrance = std::sqrt(std::numeric_limits<double>::epsilon())
+  const double kTolerance = std::sqrt(std::numeric_limits<double>::epsilon())
           * compliance.rows();
-  EXPECT_TRUE(CompareMatrices(compliance, reference_compliance, kTolenrance,
+  EXPECT_TRUE(CompareMatrices(compliance, reference_compliance, kTolerance,
                               MatrixCompareType::absolute));
 
-//  PRINT_VAR(compliance.row(20));
+  PRINT_VAR(compliance.rows());
+  PRINT_VAR((compliance -  reference_compliance).norm());
+  PRINT_VAR(kTolerance);
+  PRINT_VAR(compliance.norm());
 }
-
-
-
 
 }  // namespace
 }  // namespace boussinesq_solver
