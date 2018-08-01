@@ -168,7 +168,7 @@ bool OutputMeshToVTK(
   for (int i_node = 0; i_node < num_nodes; i_node++) {
     const Vector3<double> pos = points_in_mesh[i_node];
     mesh_obj << "v " << pos[0] << " " << pos[1]
-              << " " << values[i_node] << std::endl;
+              << " " << pos[2] << std::endl;
   }
 
   mesh_obj << std::endl;
@@ -260,8 +260,8 @@ double CalcForceOverMesh(const std::vector<Vector3<double>>& points_in_mesh,
     const Vector3<double>& p1 = points_in_mesh[nodes[0]];
     const Vector3<double>& p2 = points_in_mesh[nodes[1]];
     const Vector3<double>& p3 = points_in_mesh[nodes[2]];
-    double tri_area = fabs(
-        CalcTriangleArea(p1.head(2), p2.head(2), p3.head(2)));
+    Vector3<double> vector_tri_area = CalcTriangleArea(p1, p2, p3);
+    double tri_area = vector_tri_area.norm();
 
     for (int i_node = 0; i_node < 3; i_node++) {
       total_force = total_force + tri_area / 3 * pressure[nodes[i_node]];

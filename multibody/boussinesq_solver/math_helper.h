@@ -17,6 +17,19 @@ double CalcTriangleArea(const Vector2<double>& p1,
                         const Vector2<double>& p2,
                         const Vector2<double>& p3);
 
+
+/// This method computes the vector of the area of the triangle defined by
+/// points p1, p2 and p3. The norm of the vector is the area of the triangles,
+/// and the direction points towards toward the surface normal of triangle
+/// p1, p2, p3.
+/// @param p1 First vertex.
+/// @param p2 Second vertex.
+/// @param p3 Third vertex.
+/// @returns The are of the triangle defined by p1, p2 and p3.
+Vector3<double> CalcTriangleArea(const Vector3<double>& p1,
+                                 const Vector3<double>& p2,
+                                 const Vector3<double>& p3);
+
 /// This method checks the orientation of the three points p1, p2, p3.
 /// It returns 1 if the three points are ordered counter-clockwise. -1 if
 /// clockwise. 0 if the three are co-linear.

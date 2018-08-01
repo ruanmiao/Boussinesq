@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "drake/multibody/boussinesq_solver/math_helper.h"
+#include "drake/common/drake_assert.h"
 
 namespace drake {
 namespace multibody {
@@ -87,7 +88,7 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
 Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
                                               const Vector2<double>& p2,
                                               double zA) {
-  if (fabs(zA - 0) < 10 * std::numeric_limits<double>::epsilon()) {
+  if (pow(zA, 2) < 10 * std::numeric_limits<double>::epsilon()) {
     return  CalcIntegralReferenceTriangle(p1, p2);
   }
 
@@ -159,6 +160,22 @@ Vector3<double> CalcIntegralReferenceTriangle(const Vector2<double>& p1,
           (cos(theta_0) *
               log((delta_0 + alpha_prime) / (delta_0 - alpha_prime))));
 
+  DRAKE_ASSERT(pow(zA, 2) > std::numeric_limits<double>::epsilon());
+
+  DRAKE_ASSERT(pow(sin(theta_0), 2) > std::numeric_limits<double>::epsilon());
+  DRAKE_ASSERT(pow(sin(theta_f), 2) > std::numeric_limits<double>::epsilon());
+
+  DRAKE_ASSERT(pow(sin(theta_0) * zA, 2) > std::numeric_limits<double>::epsilon());
+  DRAKE_ASSERT(pow(sin(theta_f) * zA, 2) > std::numeric_limits<double>::epsilon());
+
+  DRAKE_ASSERT(fabs(theta_0) > std::numeric_limits<double>::epsilon());
+  DRAKE_ASSERT(fabs(theta_f) > std::numeric_limits<double>::epsilon());
+
+  DRAKE_ASSERT(fabs(delta_0 - alpha_prime) > std::numeric_limits<double>::epsilon());
+  DRAKE_ASSERT(fabs(delta_f - alpha_prime) > std::numeric_limits<double>::epsilon());
+
+  DRAKE_ASSERT(fabs(integral_without_rotation(0)) < std::numeric_limits<double>::infinity());
+  DRAKE_ASSERT(fabs(integral_without_rotation(1)) < std::numeric_limits<double>::infinity());
 
   results.head(2) =
       rotation_matrix_psi * rotation_matrix_phi * integral_without_rotation;

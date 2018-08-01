@@ -20,6 +20,10 @@ Vector3<double> CalcGeneralTriangleCompliance(
     const Vector2<double>& p2,
     const Vector2<double>& p3,
     double k_const) {
+
+  if(fabs(zA) < std::numeric_limits<double>::epsilon()) {
+    zA = 0.0;
+  }
   const int is_counter_cw = CalcTriangleOrientation(p1, p2, p3);
 
   const Vector3<double>& I_12 = CalcIntegralReferenceTriangle(p1, p2, zA);

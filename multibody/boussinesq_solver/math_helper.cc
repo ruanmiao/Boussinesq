@@ -1,6 +1,10 @@
 #include "drake/multibody/boussinesq_solver/math_helper.h"
 
 #include <limits>
+#include "drake/common/drake_assert.h"
+
+#include <iostream>
+#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
 
 namespace drake {
 namespace multibody {
@@ -12,6 +16,14 @@ double CalcTriangleArea(const Vector2<double>& p1,
   const Vector2<double> u1 = p2 - p1;
   const Vector2<double> u2 = p3 - p1;
   return (u1(0) * u2(1) - u1(1) * u2(0)) / 2.0;
+}
+
+Vector3<double> CalcTriangleArea(const Vector3<double>& p1,
+                        const Vector3<double>& p2,
+                        const Vector3<double>& p3) {
+  const Vector3<double> u1 = p2 - p1;
+  const Vector3<double> u2 = p3 - p1;
+  return u1.cross(u2)/2.0;
 }
 
 int CalcTriangleOrientation(const Vector2<double>& p1,
@@ -108,6 +120,14 @@ Eigen::Isometry3d CalcTransformationFromTriangleFrame(
   const Eigen::Vector3d u1 = p2 - p1;
   const Eigen::Vector3d u2 = p3 - p1;
   const Eigen::Vector3d area = u1.cross(u2);
+
+  if (fabs(area.norm()) < 10 * std::numeric_limits<double>::epsilon()) {
+    PRINT_VAR(p1);
+    PRINT_VAR(p2);
+    PRINT_VAR(p3);
+    PRINT_VAR(xA);
+  }
+  DRAKE_ASSERT(fabs(area.norm()) > 10 * std::numeric_limits<double>::epsilon());
 
   const Eigen::Vector3d z_T = area / area.norm();
   const Eigen::Vector3d x_T = u1 / u1.norm();

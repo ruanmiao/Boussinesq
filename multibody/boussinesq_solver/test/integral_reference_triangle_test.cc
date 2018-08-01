@@ -155,6 +155,41 @@ GTEST_TEST(IntegralReferenceTriangle3DTest, General2) {
           MatrixCompareType::absolute));
 }
 
+/// The expected values for this files are the results by running Matlab. The
+/// precision (6 digits) of the expected values if the same as the tol. of the
+/// Integration function in Matlab
+GTEST_TEST(IntegralReferenceTriangle3DTest, General3) {
+  Vector2d p1, p2;
+  p1 << 0, 0;
+  p2 << -1, 0;
+
+  Vector3d res = CalcIntegralReferenceTriangle(p1, p2, 0.8);
+  Vector3d expected_res;
+  expected_res << 0.0, 0.0, 0.0;
+  EXPECT_TRUE(
+      CompareMatrices(
+          res,
+          expected_res, 10 * 1e-5,
+          MatrixCompareType::absolute));
+}
+
+/// The expected values for this files are the results by running Matlab. The
+/// precision (6 digits) of the expected values if the same as the tol. of the
+/// Integration function in Matlab
+GTEST_TEST(IntegralReferenceTriangle3DTest, General4) {
+  Vector2d p1, p2;
+  p1 << -2, 0;
+  p2 << -1, 0;
+
+  Vector3d res = CalcIntegralReferenceTriangle(p1, p2, 0.0);
+  Vector3d expected_res;
+  expected_res << 0.0, 0.0, 0.0;
+  EXPECT_TRUE(
+      CompareMatrices(
+          res,
+          expected_res, 10 * 1e-5,
+          MatrixCompareType::absolute));
+}
 
 }  // namespace
 }  // namespace boussinesq_solver
