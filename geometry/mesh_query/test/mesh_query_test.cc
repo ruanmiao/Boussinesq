@@ -149,10 +149,13 @@ struct PointToMeshQueryResults {
   Vector3d normal_W;
 
   Vector3d p_WP;
+
+  Vector3d barycentric_P;
 };
 
 void VerifyPointToMeshQuery(
-    const PointToMeshQueryData& data, PointToMeshQueryResults expected_results) {
+    const PointToMeshQueryData& data, PointToMeshQueryResults expected_results,
+    bool check_barycentric = false) {
   PointMeshDistance<double> results;
   const bool is_inside = CalcPointToMeshNegativeDistance(
       data.X_WG, data.points_G, data.triangles, data.normals_G, data.p_WQ,
@@ -177,6 +180,12 @@ void VerifyPointToMeshQuery(
   EXPECT_TRUE(CompareMatrices(
       results.p_FP, expected_results.p_WP,
       kTolerance, MatrixCompareType::relative));
+
+  if (check_barycentric) {
+    EXPECT_TRUE(CompareMatrices(
+        results.barycentric_P, expected_results.barycentric_P,
+        kTolerance, MatrixCompareType::relative));
+  }
 }
 
 GTEST_TEST(MeshQueries, PointInsideCubeMesh) {
@@ -260,6 +269,35 @@ GTEST_TEST(MeshQueries, PointInsideCubeMesh) {
     data.p_WQ << -1.2, 0.5, -0.2;
     expected_results.is_inside = false;
     VerifyPointToMeshQuery(data, expected_results);
+  }
+
+  // Verify barycentric coordinates of projected point P.
+  const bool do_verify_barycentric{true};
+  {
+    // This point is closest to the bottom. Its projetion should exactly
+    // match the centroid.
+    data.p_WQ << 2./3., 1./3., 0.2;
+    expected_results.is_inside = true;
+    expected_results.distance = -0.2;
+    expected_results.triangle_index = 0;
+    expected_results.normal_W = -Vector3d::UnitZ();
+    expected_results.p_WP << 2./3., 1./3., 0.0;
+    expected_results.barycentric_P << 1./3., 1./3., 1./3.;
+    VerifyPointToMeshQuery(data, expected_results, do_verify_barycentric);
+  }
+
+  {
+    // This point is closest to the bottom. It's almost on top of an edge.
+    // We add a small epsilon to the x coordinate to ensure the returned
+    // triangle is the one with index 0.
+    data.p_WQ << 0.5 + 5 * kEpsilon, 0.5, 0.2;
+    expected_results.is_inside = true;
+    expected_results.distance = -0.2;
+    expected_results.triangle_index = 0;
+    expected_results.normal_W = -Vector3d::UnitZ();
+    expected_results.p_WP << 0.5, 0.5, 0.0;
+    expected_results.barycentric_P << 0.5, 0.5, 0.0;
+    VerifyPointToMeshQuery(data, expected_results, do_verify_barycentric);
   }
 }
 
