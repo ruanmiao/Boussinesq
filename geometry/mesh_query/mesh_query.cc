@@ -34,7 +34,7 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
       PointMeshDistance<double> point_mesh_result;
 
       const bool is_inside = CalcPointToMeshNegativeDistance(
-          X_WM2, mesh2.points_G, mesh2.triangles, mesh2.normals_G, p_WQ,
+          X_WM2, mesh2.points_G, mesh2.triangles, mesh2.face_normals_G, p_WQ,
           &point_mesh_result);
 
       if (is_inside) {
@@ -47,7 +47,7 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         //////////////////////////////////////////////////////////////////////////
 
         result.meshA_index = mesh1.mesh_index;
-        result.triangle_A = mesh1.node_element[node_index];
+        result.triangle_A = mesh1.node_element[node_index].first;
         result.p_WoAs_W = p_WQ;
 
         const Vector3<double> p_WP = point_mesh_result.p_FP;
@@ -60,7 +60,8 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
 
         // Since we assume that node_element points to local node "zero" in the
         // mesh A triangle, the barycentric coordinates are 1, 0, 0.
-        result.barycentric_A << 1.0, 0.0, 0.0;
+        result.barycentric_A =
+            Vector3<double>::Unit(mesh1.node_element[node_index].second);
 
         //////////////////////////////////////////////////////////////////////////
         // MESH B INFO

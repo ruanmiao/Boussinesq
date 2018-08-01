@@ -40,15 +40,14 @@ void OutputMeshToOBJ(
   file.close();
 }
 
+
 void OutputMeshToVTK(
-    const std::string& file_name,
+    std::ofstream& file,
     const std::vector<Vector3<double>>& points_G,
     const std::vector<Vector3<int>>& triangles,
     const Isometry3<double>& X_WG = Isometry3<double>::Identity()) {
   const int num_nodes = points_G.size();
   const int num_tris = triangles.size();
-
-  std::ofstream file(file_name);
 
   // Header for the VTK file.
   file << "# vtk DataFile Version 3.0" << std::endl;
@@ -74,7 +73,7 @@ void OutputMeshToVTK(
 
   for (const auto& triangle : triangles) {
     file << "3 " << triangle[0] << " " << triangle[1] << " " << triangle[2] <<
-        std::endl;
+         std::endl;
   }
   file << std::endl;
 
@@ -85,7 +84,15 @@ void OutputMeshToVTK(
     file << "5" << std::endl;
   }
   file << std::endl;
+}
 
+void OutputMeshToVTK(
+    const std::string& file_name,
+    const std::vector<Vector3<double>>& points_G,
+    const std::vector<Vector3<int>>& triangles,
+    const Isometry3<double>& X_WG = Isometry3<double>::Identity()) {
+  std::ofstream file(file_name);
+  OutputMeshToVTK(file, points_G, triangles, X_WG);
   file.close();
 }
 
@@ -121,6 +128,23 @@ void OutputScatteredPointsToVTK(
   file << std::endl;
 
   file.close();
+}
+
+void AppendCellCenteredVectorFieldToVTK(
+    std::ofstream& file,
+    const std::string& field_name,
+    const std::vector<Vector3<double>>& vector_field) {
+  const int num_nodes = vector_field.size();
+
+  file << std::endl;
+  file << "CELL_DATA " << num_nodes << std::endl;
+  file << "VECTORS " + field_name + " double" << std::endl;
+
+  for (const auto& vector : vector_field) {
+    file << fmt::format("{:.8f} {:.8f} {:.8f}\n",
+                        vector[0], vector[1], vector[2]);
+  }
+  file << std::endl;
 }
 
 }  // namespace mesh_query

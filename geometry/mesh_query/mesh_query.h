@@ -21,16 +21,18 @@ struct Mesh {
   // Mesh nodes measured and expressed in a the mesh geometry frame G.
   std::vector<Vector3<double>> points_G;
   // Mesh triangles.
-  std::vector<Vector3<int>>& triangles;
+  std::vector<Vector3<int>> triangles;
   // Mesh face normals expressed in the mesh geometry frame G, the same as the
   // nodes.
-  std::vector<Vector3<double>> normals_G;
+  std::vector<Vector3<double>> face_normals_G;
 
   // A conveniently pre-computed array such that for a node_index then
-  // node_element[node_index] is an element of which node_index is a vertex.
-  // The element assigned to node_index is arbitrary. All we know is the node
-  // "zero" in local element indexing.
-  std::vector<int> node_element;
+  // node_element[node_index].first is an element of which node_index is a
+  // vertex.
+  // node_element[node_index].second tells us the local index of node_index in
+  // that element.
+  // The element assigned to node_index is arbitrary.
+  std::vector<std::pair<int, int>> node_element;
 };
 
 std::vector<Vector3<double>> CalcMeshFaceNormals(

@@ -31,6 +31,7 @@ drake_cc_binary(
     data = [":models"],
     deps = [
         "//common:find_resource",
+        "//geometry/mesh_query",
         "//geometry/mesh_query:vtk_io",
         "//multibody/shapes",
         "@gflags",
