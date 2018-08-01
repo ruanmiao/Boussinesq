@@ -24,6 +24,15 @@ drake_cc_library(
     ],
 )
 
+drake_cc_library(
+    name = "vtk_io",
+    hdrs = ["vtk_io.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//common:essential",
+    ],
+)
+
 drake_cc_googletest(
     name = "mesh_query_test",
     deps = [

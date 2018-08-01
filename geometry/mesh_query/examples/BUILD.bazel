@@ -1,0 +1,30 @@
+# -*- python -*-
+
+load(
+    "//tools:drake.bzl",
+    "drake_cc_binary",
+    "drake_cc_googletest",
+    "drake_cc_library",
+)
+load("//tools/install:install_data.bzl", "install_data")
+load("//tools/lint:lint.bzl", "add_lint_tests")
+load(
+    "@drake//tools/vector_gen:vector_gen.bzl",
+    "drake_cc_vector_gen_library",
+)
+
+drake_cc_binary(
+    name = "read_obj_write_vtk",
+    srcs = ["read_obj_write_vtk.cc"],
+    data = [":models"],
+    deps = [
+        "//common:find_resource",
+        "//geometry/mesh_query:vtk_io",
+        "//multibody/shapes",
+        "@gflags",
+    ],
+)
+
+install_data()
+
+add_lint_tests()
