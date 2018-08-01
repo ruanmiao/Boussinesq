@@ -42,9 +42,10 @@ void OutputMeshToOBJ(
 
 void OutputMeshToVTK(
     const std::string& file_name,
-    const std::vector<Vector3<double>>& points,
-    const std::vector<Vector3<int>>& triangles) {
-  const int num_nodes = points.size();
+    const std::vector<Vector3<double>>& points_G,
+    const std::vector<Vector3<int>>& triangles,
+    const Isometry3<double>& X_WG = Isometry3<double>::Identity()) {
+  const int num_nodes = points_G.size();
   const int num_tris = triangles.size();
 
   std::ofstream file(file_name);
@@ -56,12 +57,14 @@ void OutputMeshToVTK(
   file << std::endl;
   file << "DATASET UNSTRUCTURED_GRID" << std::endl;
 
-  // Header fot he points data.
+  // Header fot he points_G data.
   file << "POINTS " << num_nodes << " double" << std::endl;
 
-  // Write the points data.
-  for (const auto& point : points) {
-    file << fmt::format("{:.8f} {:.8f} {:.8f}\n", point[0], point[1], point[2]);
+  // Write the points_G data.
+  for (const auto& point_G : points_G) {
+    const auto point_W = X_WG * point_G;
+    file << fmt::format("{:.8f} {:.8f} {:.8f}\n",
+                        point_W[0], point_W[1], point_W[2]);
   }
   file << std::endl;
 

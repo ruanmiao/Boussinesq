@@ -13,6 +13,9 @@ namespace mesh_query {
 namespace {
 
 using ::DrakeShapes::Mesh;
+using Eigen::Translation3d;
+using Eigen::Isometry3d;
+using Eigen::Vector3d;
 
 int DoMain() {
 
@@ -24,7 +27,13 @@ int DoMain() {
   Mesh mesh_loader(file_name, file_name);
   mesh_loader.LoadObjFile(&points, &triangles);
 
-  OutputMeshToVTK("sphere.vtk", points, triangles);
+  const double radius = 1.0;
+  const double penetration = 0.1;
+  const double z_WSo = radius - penetration;
+
+  Isometry3d X_WS{Translation3d{Vector3d(0, 0, z_WSo)}};
+
+  OutputMeshToVTK("sphere.vtk", points, triangles, X_WS);
   OutputScatteredPointsToVTK("sphere_points.vtk", points);
   return 0;
 }
