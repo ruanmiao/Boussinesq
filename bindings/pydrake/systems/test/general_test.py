@@ -2,6 +2,8 @@
 
 from __future__ import print_function
 
+import pydrake.systems.framework as mut
+
 import copy
 import warnings
 
@@ -22,13 +24,13 @@ from pydrake.systems.analysis import (
 from pydrake.systems.framework import (
     BasicVector, BasicVector_,
     Context_,
-    ContinuousState_,
+    ContinuousState, ContinuousState_,
     Diagram, Diagram_,
     DiagramBuilder, DiagramBuilder_,
     DiscreteUpdateEvent_,
     DiscreteValues_,
     Event_,
-    InputPortDescriptor_,
+    InputPort_,
     LeafContext_,
     LeafSystem_,
     OutputPort_,
@@ -39,7 +41,7 @@ from pydrake.systems.framework import (
     Supervector_,
     System_,
     SystemOutput_,
-    VectorBase_,
+    VectorBase, VectorBase_,
     VectorSystem_,
     )
 from pydrake.systems import primitives
@@ -93,6 +95,19 @@ class TestGeneral(unittest.TestCase):
         # TODO(eric.cousineau): Consolidate the main API tests for `System`
         # to this test point.
 
+    def test_context_api(self):
+        system = Adder(3, 10)
+        context = system.CreateDefaultContext()
+        self.assertIsInstance(
+            context.get_continuous_state(), ContinuousState)
+        self.assertIsInstance(
+            context.get_mutable_continuous_state(), ContinuousState)
+        self.assertIsInstance(
+            context.get_continuous_state_vector(), VectorBase)
+        self.assertIsInstance(
+            context.get_mutable_continuous_state_vector(), VectorBase)
+        # TODO(eric.cousineau): Consolidate main API tests for `Context` here.
+
     def test_instantiations(self):
         # Quick check of instantions for given types.
         # N.B. These checks are ordered according to their binding definitions
@@ -109,7 +124,7 @@ class TestGeneral(unittest.TestCase):
         self._check_instantiations(DiagramBuilder_)
         self._check_instantiations(OutputPort_)
         self._check_instantiations(SystemOutput_)
-        self._check_instantiations(InputPortDescriptor_)
+        self._check_instantiations(InputPort_)
         self._check_instantiations(Parameters_)
         self._check_instantiations(State_)
         self._check_instantiations(ContinuousState_)
@@ -124,6 +139,10 @@ class TestGeneral(unittest.TestCase):
         self._check_instantiations(BasicVector_)
         self._check_instantiations(Supervector_)
         self._check_instantiations(Subvector_)
+        # Deprecated aliases.
+        # TODO(eric.cousineau): Make this raise a deprecation warning.
+        self._check_instantiations(mut.InputPortDescriptor_)
+        self.assertEqual(mut.InputPortDescriptor, mut.InputPort)
 
     def test_scalar_type_conversion(self):
         for T in [float, AutoDiffXd, Expression]:

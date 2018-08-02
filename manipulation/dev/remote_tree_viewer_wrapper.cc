@@ -24,7 +24,14 @@ static double GetUnixTime(void) {
       .count();
 }
 
-RemoteTreeViewerWrapper::RemoteTreeViewerWrapper() {}
+RemoteTreeViewerWrapper::RemoteTreeViewerWrapper(drake::lcm::DrakeLcm* lcm) {
+  if (lcm == nullptr) {
+    owned_lcm_ = std::make_unique<drake::lcm::DrakeLcm>();
+    lcm_ = owned_lcm_.get();
+  } else {
+    lcm_ = lcm;
+  }
+}
 
 void FillLcmView2CommsMessage(int64_t now, const json& j,
                               lcmt_viewer2_comms* msg) {
@@ -72,11 +79,12 @@ void RemoteTreeViewerWrapper::PublishPointCloud(
   auto msg = lcmt_viewer2_comms();
   FillLcmView2CommsMessage(now, j, &msg);
   // Use channel 0 for remote viewer communications.
-  lcm_.get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
+  lcm_->get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
 }
 
 void RemoteTreeViewerWrapper::PublishLine(
-    const Eigen::Matrix3Xd& pts, const std::vector<std::string>& path) {
+    const Eigen::Matrix3Xd& pts, const std::vector<std::string>& path,
+    const Eigen::Ref<const Eigen::Vector4d>& color) {
   int64_t now = GetUnixTime() * 1000 * 1000;
   // Format a JSON string for this pointcloud
   json j = {{"timestamp", now},
@@ -87,6 +95,7 @@ void RemoteTreeViewerWrapper::PublishLine(
                    {
                        {"type", "line"},
                        {"points", std::vector<std::vector<double>>()},
+                       {"color", std::array<double, 4>()},
                    }}}},
             },
             {"settransform", json({})},
@@ -97,11 +106,13 @@ void RemoteTreeViewerWrapper::PublishLine(
     j["setgeometry"][0]["geometry"]["points"].push_back(
         {pts(0, i), pts(1, i), pts(2, i)});
   }
+  j["setgeometry"][0]["geometry"]["color"] = {color(0), color(1), color(2),
+                                              color(3)};
 
   auto msg = lcmt_viewer2_comms();
   FillLcmView2CommsMessage(now, j, &msg);
   // Use channel 0 for remote viewer communications.
-  lcm_.get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
+  lcm_->get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
 }
 
 void RemoteTreeViewerWrapper::PublishArrow(
@@ -138,7 +149,7 @@ void RemoteTreeViewerWrapper::PublishArrow(
   auto msg = lcmt_viewer2_comms();
   FillLcmView2CommsMessage(now, j, &msg);
   // Use channel 0 for remote viewer communications.
-  lcm_.get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
+  lcm_->get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
 }
 void RemoteTreeViewerWrapper::PublishRawMesh(
     const Eigen::Matrix3Xd& verts, const std::vector<Eigen::Vector3i>& tris,
@@ -170,7 +181,7 @@ void RemoteTreeViewerWrapper::PublishRawMesh(
   auto msg = lcmt_viewer2_comms();
   FillLcmView2CommsMessage(now, j, &msg);
   // Use channel 0 for remote viewer communications.
-  lcm_.get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
+  lcm_->get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
 }
 
 void RemoteTreeViewerWrapper::PublishRigidBodyTree(
@@ -179,10 +190,8 @@ void RemoteTreeViewerWrapper::PublishRigidBodyTree(
     bool visual) {
   auto kinematics_cache = tree.doKinematics(q);
   for (int i = 0; i < tree.get_num_bodies(); ++i) {
-    PublishRigidBody(
-        tree, i,
-        tree.relativeTransform(kinematics_cache, 0, i),
-        color, path, visual);
+    PublishRigidBody(tree, i, tree.relativeTransform(kinematics_cache, 0, i),
+                     color, path, visual);
   }
 }
 
@@ -297,7 +306,7 @@ void RemoteTreeViewerWrapper::PublishGeometry(
   auto msg = lcmt_viewer2_comms();
   FillLcmView2CommsMessage(now, j, &msg);
   // Use channel 0 for remote viewer communications.
-  lcm_.get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
+  lcm_->get_lcm_instance()->publish("DIRECTOR_TREE_VIEWER_REQUEST_<0>", &msg);
 }
 }  // namespace dev
 }  // namespace manipulation

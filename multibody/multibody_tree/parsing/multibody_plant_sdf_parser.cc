@@ -1,6 +1,7 @@
 #include "drake/multibody/multibody_tree/parsing/multibody_plant_sdf_parser.h"
 
 #include <memory>
+#include <utility>
 
 #include <sdf/sdf.hh>
 
@@ -92,7 +93,7 @@ SpatialInertia<double> ExtractSpatialInertiaAboutBoExpressedInB(
 // Helper method to retrieve a Body given the name of the link specification.
 const Body<double>& GetBodyByLinkSpecificationName(
     const sdf::Model& model, const std::string& link_name,
-    const MultibodyPlant<double>& plant) {
+    ModelInstanceIndex model_instance, const MultibodyPlant<double>& plant) {
   // SDF's convention to indicate a joint is connected to the world is to either
   // name the corresponding link "world" or just leave it unnamed.
   // Thus this the "if" statement in the following line.
@@ -105,7 +106,7 @@ const Body<double>& GetBodyByLinkSpecificationName(
       throw std::logic_error("There is no parent link named '" +
           link_name + "' in the model.");
     }
-    return plant.GetBodyByName(link_name);
+    return plant.GetBodyByName(link_name, model_instance);
   }
 }
 
@@ -194,18 +195,42 @@ void AddJointActuatorFromSpecification(
   }
 }
 
+// Returns joint limits as the pair (lower_limit, upper_limit).
+// The units of the limits depend on the particular joint type. Units are meters
+// for prismatic joints and radians for revolute joints.
+// This method throws an exception if the joint type is not one of revolute or
+// prismatic.
+std::pair<double, double> ParseJointLimits(const sdf::Joint& joint_spec) {
+  DRAKE_THROW_UNLESS(joint_spec.Type() == sdf::JointType::REVOLUTE ||
+      joint_spec.Type() == sdf::JointType::PRISMATIC);
+  // Axis specification.
+  const sdf::JointAxis* axis = joint_spec.Axis();
+  if (axis == nullptr) {
+    throw std::runtime_error(
+        "An axis must be specified for joint '" + joint_spec.Name() + "'");
+  }
+  const double lower_limit = axis->Lower();
+  const double upper_limit = axis->Upper();
+  if (lower_limit > upper_limit) {
+    throw std::runtime_error(
+        "The lower limit must be lower (or equal) than the upper limit for "
+        "joint '" + joint_spec.Name() + "'.");
+  }
+  return std::make_pair(axis->Lower(), axis->Upper());
+}
+
 // Helper method to add joints to a MultibodyPlant given an sdf::Joint
 // specification object.
 void AddJointFromSpecification(
     const sdf::Model& model_spec, const sdf::Joint& joint_spec,
-    MultibodyPlant<double>* plant) {
+    ModelInstanceIndex model_instance, MultibodyPlant<double>* plant) {
   // Pose of the model frame M in the world frame W.
   const Isometry3d X_WM = ToIsometry3(model_spec.Pose());
 
   const Body<double>& parent_body = GetBodyByLinkSpecificationName(
-      model_spec, joint_spec.ParentLinkName(), *plant);
+      model_spec, joint_spec.ParentLinkName(), model_instance, *plant);
   const Body<double>& child_body = GetBodyByLinkSpecificationName(
-      model_spec, joint_spec.ChildLinkName(), *plant);
+      model_spec, joint_spec.ChildLinkName(), model_instance, *plant);
 
   // Get the pose of frame J in the frame of the child link C, as specified in
   // <joint> <pose> ... </pose></joint>.
@@ -258,20 +283,22 @@ void AddJointFromSpecification(
     case sdf::JointType::PRISMATIC: {
       const double damping = ParseJointDamping(joint_spec);
       Vector3d axis_J = ExtractJointAxis(model_spec, joint_spec);
+      const std::pair<double, double> limits = ParseJointLimits(joint_spec);
       const auto& joint = plant->AddJoint<PrismaticJoint>(
           joint_spec.Name(),
           parent_body, X_PJ,
-          child_body, X_CJ, axis_J, damping);
+          child_body, X_CJ, axis_J, limits.first, limits.second, damping);
       AddJointActuatorFromSpecification(joint_spec, joint, plant);
       break;
     }
     case sdf::JointType::REVOLUTE: {
       const double damping = ParseJointDamping(joint_spec);
       Vector3d axis_J = ExtractJointAxis(model_spec, joint_spec);
+      const std::pair<double, double> limits = ParseJointLimits(joint_spec);
       const auto& joint = plant->AddJoint<RevoluteJoint>(
           joint_spec.Name(),
           parent_body, X_PJ,
-          child_body, X_CJ, axis_J, damping);
+          child_body, X_CJ, axis_J, limits.first, limits.second, damping);
       AddJointActuatorFromSpecification(joint_spec, joint, plant);
       break;
     }
@@ -392,7 +419,7 @@ ModelInstanceIndex AddModelFromSdfFile(
        ++joint_index) {
     // Get a pointer to the SDF joint, and the joint axis information.
     const sdf::Joint& joint = *model.JointByIndex(joint_index);
-    AddJointFromSpecification(model, joint, plant);
+    AddJointFromSpecification(model, joint, model_instance, plant);
   }
 
   return model_instance;

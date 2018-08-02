@@ -560,10 +560,10 @@ TEST_F(DiagramTest, Witness) {
 TEST_F(DiagramTest, Topology) {
   ASSERT_EQ(kSize, diagram_->get_num_input_ports());
   for (int i = 0; i < kSize; ++i) {
-    const auto& descriptor = diagram_->get_input_port(i);
-    EXPECT_EQ(diagram_.get(), descriptor.get_system());
-    EXPECT_EQ(kVectorValued, descriptor.get_data_type());
-    EXPECT_EQ(kSize, descriptor.size());
+    const auto& input_port = diagram_->get_input_port(i);
+    EXPECT_EQ(diagram_.get(), input_port.get_system());
+    EXPECT_EQ(kVectorValued, input_port.get_data_type());
+    EXPECT_EQ(kSize, input_port.size());
   }
 
   ASSERT_EQ(kSize, diagram_->get_num_output_ports());
@@ -1259,11 +1259,11 @@ class Reduce : public LeafSystem<double> {
                                   &Reduce::CalcFeedthrough);
   }
 
-  const systems::InputPortDescriptor<double>& get_sink_input() {
+  const systems::InputPort<double>& get_sink_input() {
     return this->get_input_port(sink_input_);
   }
 
-  const systems::InputPortDescriptor<double>& get_feedthrough_input() {
+  const systems::InputPort<double>& get_feedthrough_input() {
     return this->get_input_port(feedthrough_input_);
   }
 
@@ -2405,7 +2405,7 @@ GTEST_TEST(DiagramConstraintTest, SystemConstraintsTest) {
 }
 
 GTEST_TEST(DiagramParametersTest, ParameterTest) {
-  // Construct a diagram with multiple subsytems that have parameters.
+  // Construct a diagram with multiple subsystems that have parameters.
   systems::DiagramBuilder<double> builder;
   auto pendulum1 =
       builder.AddSystem<examples::pendulum::PendulumPlant<double>>();

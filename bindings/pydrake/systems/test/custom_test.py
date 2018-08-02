@@ -55,7 +55,7 @@ class CustomAdder(LeafSystem):
 # TODO(eric.cousineau): Make this class work with custom scalar types once
 # referencing with custom dtypes lands.
 # WARNING: At present, dtype=object matrices are NOT well supported, and may
-# produce unexecpted results (e.g. references not actually being respected).
+# produce unexpected results (e.g. references not actually being respected).
 
 
 class CustomVectorSystem(VectorSystem):
@@ -202,6 +202,16 @@ class TestCustom(unittest.TestCase):
         self.assertFalse(system.HasDirectFeedthrough(output_port=0))
         self.assertFalse(
             system.HasDirectFeedthrough(input_port=0, output_port=0))
+
+        # Test explicit calls.
+        system = TrivialSystem()
+        context = system.CreateDefaultContext()
+        system.Publish(context)
+        self.assertTrue(system.called_publish)
+        context_update = context.Clone()
+        system.CalcTimeDerivatives(
+            context, context_update.get_mutable_continuous_state())
+        self.assertTrue(system.called_continuous)
 
     def test_vector_system_overrides(self):
         dt = 0.5

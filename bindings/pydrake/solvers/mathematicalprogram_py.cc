@@ -199,6 +199,7 @@ PYBIND11_MODULE(_mathematicalprogram_py, m) {
       .value("kMobyLCP", SolverType::kMobyLCP)
       .value("kMosek", SolverType::kMosek)
       .value("kNlopt", SolverType::kNlopt)
+      .value("kOsqp", SolverType::kOsqp)
       .value("kSnopt", SolverType::kSnopt);
 
   py::class_<MathematicalProgram> prog_cls(m, "MathematicalProgram");
@@ -292,6 +293,13 @@ PYBIND11_MODULE(_mathematicalprogram_py, m) {
       .def("AddConstraint",
            static_cast<Binding<Constraint> (MathematicalProgram::*)(
                const Formula&)>(&MathematicalProgram::AddConstraint))
+      .def("AddLinearConstraint",
+           static_cast<Binding<LinearConstraint> (MathematicalProgram::*)(
+               const Eigen::Ref<const Eigen::MatrixXd>&,
+               const Eigen::Ref<const Eigen::VectorXd>&,
+               const Eigen::Ref<const Eigen::VectorXd>&,
+               const Eigen::Ref<const VectorXDecisionVariable>&)>(
+               &MathematicalProgram::AddLinearConstraint))
       .def("AddLinearConstraint",
            static_cast<Binding<LinearConstraint> (MathematicalProgram::*)(
                const Expression&, double, double)>(
@@ -397,6 +405,7 @@ PYBIND11_MODULE(_mathematicalprogram_py, m) {
       .def("FindDecisionVariableIndex",
            &MathematicalProgram::FindDecisionVariableIndex)
       .def("num_vars", &MathematicalProgram::num_vars)
+      .def("decision_variables", &MathematicalProgram::decision_variables)
       .def("GetSolution",
            [](const MathematicalProgram& prog, const Variable& var) {
              return prog.GetSolution(var);

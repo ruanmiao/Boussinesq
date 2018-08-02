@@ -78,7 +78,7 @@ GTEST_TEST(RollPitchYaw, ToRotationMatrix) {
                           * Eigen::AngleAxisd(r, Vector3d::UnitX())).matrix();
   const RotationMatrix<double> R_eigen(m_eigen);
   const RotationMatrix<double> R_rpy = rpy.ToRotationMatrix();
-  EXPECT_TRUE(R_rpy.IsNearlyEqualTo(R_eigen, kEpsilon));
+  EXPECT_TRUE(R_rpy.IsNearlyEqualTo(R_eigen, kEpsilon).value());
 
   // Also test associated convenience "sugar" method that returns 3x3 matrix.
   const Matrix3d m_rpy = rpy.ToMatrix3ViaRotationMatrix();
@@ -107,7 +107,7 @@ GTEST_TEST(RollPitchYaw, testToQuaternion) {
   const Eigen::Quaterniond quat = rpy.ToQuaternion();
   const RotationMatrix<double> R1(rpy);
   const RotationMatrix<double> R2(quat);
-  EXPECT_TRUE(R1.IsNearlyEqualTo(R2, kEpsilon));
+  EXPECT_TRUE(R1.IsNearlyEqualTo(R2, kEpsilon).value());
 
   // Test SetFromQuaternion.
   RollPitchYaw<double> rpy2(0, 0, 0);
@@ -275,7 +275,7 @@ GTEST_TEST(RollPitchYaw, PrecisionOfAngularVelocityFromRpyDtAndViceVersa) {
       // max_rpyDt scales with 1/cos(pitch_angle) multiplied by angular velocity
       // wA = (1, 1, 1).  Check that max_rpyDt has a range that is within
       // a reasonable multiplier (1000) of that scale.
-      // max_rpyDDt scales with 1/cos(pitch_angle)² multipled by angular
+      // max_rpyDDt scales with 1/cos(pitch_angle)² multiplied by angular
       // acceleration alphaA = (1, 1, 1).  Check that max_rpyDDt has a range
       // that is within a reasonable multiplier (1000²) of that scale.
       EXPECT_TRUE(1E-3 / tolerance <= max_rpyDt &&
