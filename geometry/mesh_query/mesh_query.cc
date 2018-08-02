@@ -48,7 +48,9 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
       PointMeshDistance<double> point_mesh_result;
 
       const bool is_inside = CalcPointToMeshNegativeDistance(
-          X_WM2, mesh2.points_G, mesh2.triangles, mesh2.face_normals_G, p_WQ,
+          X_WM2, mesh2.points_G, mesh2.triangles,
+          mesh2.face_normals_G, mesh2.node_normals_G,
+          p_WQ,
           &point_mesh_result);
 
       if (is_inside) {
@@ -184,11 +186,17 @@ bool CalcPointToMeshNegativeDistance(
     const Isometry3<double>& X_FA,
     const std::vector<Vector3<double>>& points_A,
     const std::vector<Vector3<int>>& triangles,
-    const std::vector<Vector3<double>>& triangle_normals_A,
+    const std::vector<Vector3<double>>& face_normals_A,
+    const std::vector<Vector3<double>>& node_normals_A,
     const Vector3<double>& p_FQ,
     PointMeshDistance<double>* point_mesh_distance_ptr) {
   using std::abs;
   using std::min;
+
+  const int num_nodes = points_A.size();
+  const int num_elements = triangles.size();
+  DRAKE_DEMAND(static_cast<int>(face_normals_A.size()) == num_elements);
+  DRAKE_DEMAND(static_cast<int>(node_normals_A.size()) == num_nodes);
 
   // Point Q measured and expressed in the mesh frame A.
   const Vector3<double> p_AQ = X_FA.inverse() * p_FQ;
@@ -219,14 +227,14 @@ bool CalcPointToMeshNegativeDistance(
   for (size_t triangle_index = 0;
        triangle_index < triangles.size(); ++triangle_index) {
     const Vector3<int>& triangle = triangles[triangle_index];
-    const Vector3<double>& normal_A = triangle_normals_A[triangle_index];
+    const Vector3<double>& face_normal_A = face_normals_A[triangle_index];
 
     const Vector3<double>& p_AP1 = points_A[triangle[0]];
     const Vector3<double>& p_AP2 = points_A[triangle[1]];
     const Vector3<double>& p_AP3 = points_A[triangle[2]];
 
     // Distance from point Q to the plane on which the triangle lies.
-    const double plane_distance = normal_A.dot(p_AQ - p_AP1);
+    const double plane_distance = face_normal_A.dot(p_AQ - p_AP1);
 
     // point is outside convex mesh. Thus we are done.
     // The check is made against a small tolerance to avoid zero distances.
@@ -235,12 +243,12 @@ bool CalcPointToMeshNegativeDistance(
     // Save the triangle with the minimum distance.
     if (plane_distance > max_neg_dist) {
       // point on the triangle's plane.
-      const Vector3<double> p_AP_local = p_AQ - plane_distance * normal_A;
-      const double A1_local = CalcTriangleArea(p_AP2, p_AP3, p_AP_local, normal_A);
+      const Vector3<double> p_AP_local = p_AQ - plane_distance * face_normal_A;
+      const double A1_local = CalcTriangleArea(p_AP2, p_AP3, p_AP_local, face_normal_A);
       if (A1_local < 0) continue; // Outside triangle.
-      const double A2_local = CalcTriangleArea(p_AP3, p_AP1, p_AP_local, normal_A);
+      const double A2_local = CalcTriangleArea(p_AP3, p_AP1, p_AP_local, face_normal_A);
       if (A2_local < 0) continue; // Outside triangle.
-      const double A3_local = CalcTriangleArea(p_AP1, p_AP2, p_AP_local, normal_A);
+      const double A3_local = CalcTriangleArea(p_AP1, p_AP2, p_AP_local, face_normal_A);
       if (A3_local < 0) continue; // Outside triangle.
 
       // If here, the projection lies inside the triangle and therefore we save
@@ -273,7 +281,7 @@ bool CalcPointToMeshNegativeDistance(
   const int triangle_index = max_neg_dist_triangle;
 
   // normal on the mesh
-  const Vector3<double>& normal_A = triangle_normals_A[triangle_index];
+  //const Vector3<double>& normal_A = face_normals_A[triangle_index];
 
   // point on the mesh.
   //const Vector3<double> p_AP = p_AQ - distance * normal_A;
@@ -290,6 +298,16 @@ bool CalcPointToMeshNegativeDistance(
   const double area = A1 + A2 + A3;
 
   const Vector3<double> barycentric_P(A1 / area, A2 / area, A3 / area);
+
+  // Interpolate normal to point on P on the mesh.
+  const Vector3<double>& normal_P1_A = node_normals_A[triangle[0]];
+  const Vector3<double>& normal_P2_A = node_normals_A[triangle[1]];
+  const Vector3<double>& normal_P3_A = node_normals_A[triangle[2]];
+
+  const Vector3<double> normal_A =
+      barycentric_P[0] * normal_P1_A +
+      barycentric_P[1] * normal_P2_A +
+      barycentric_P[2] * normal_P3_A;
 
   PointMeshDistance<double>& point_mesh_distance = *point_mesh_distance_ptr;
 

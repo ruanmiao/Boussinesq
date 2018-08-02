@@ -79,7 +79,8 @@ bool CalcPointToMeshNegativeDistance(
     const Isometry3<double>& X_FA,
     const std::vector<Vector3<double>>& points_A,
     const std::vector<Vector3<int>>& triangles,
-    const std::vector<Vector3<double>>& triangle_normals_A,
+    const std::vector<Vector3<double>>& face_normals_A,
+    const std::vector<Vector3<double>>& node_normals_A,
     const Vector3<double>& p_FQ,
     PointMeshDistance<double>* point_mesh_distance_ptr = nullptr);
 

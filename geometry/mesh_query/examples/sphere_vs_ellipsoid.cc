@@ -66,7 +66,7 @@ int DoMain() {
   FlipNormals(ellipsoid.get());
 
   const double radius = 1.0;
-  const double penetration = 0.02;
+  const double penetration = 0.05;
   const double z_WSo = radius - penetration;
 
   // Place sphere a "penetration" distance below z = 0.
