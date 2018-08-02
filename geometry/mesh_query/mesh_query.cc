@@ -241,6 +241,15 @@ bool CalcPointToMeshNegativeDistance(
   return true;
 }
 
+void FlipNormals(Mesh<double>* mesh) {
+  for (auto& triangle : mesh->triangles) {
+    std::swap(triangle[0], triangle[1]);
+  }
+  for (auto& normal : mesh->face_normals_G) {
+    normal = -normal;
+  }
+}
+
 }  // namespace mesh_query
 }  // namespace geometry
 }  // namespace drake

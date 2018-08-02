@@ -52,6 +52,14 @@ int DoMain() {
   std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
       "drake/geometry/mesh_query/examples/sphere.obj");
 
+  // For this example normals in the obj point inward and therefore we flip
+  // them.
+  FlipNormals(sphere.get());
+
+  // Re-compute normals just in case for verification.
+  sphere->face_normals_G = CalcMeshFaceNormals(
+      sphere->points_G, sphere->triangles);
+
   const double radius = 1.0;
   const double penetration = 0.1;
   const double z_WSo = radius - penetration;
