@@ -1,0 +1,174 @@
+# -*- python -*-
+
+load(
+    "@drake//tools/skylark:drake_cc.bzl",
+    "drake_cc_googletest",
+    "drake_cc_library",
+    "drake_cc_package_library",
+)
+load("//tools/lint:lint.bzl", "add_lint_tests")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+drake_cc_package_library(
+    name = "boussinesq_solver",
+    deps = [
+        ":compliance_matrix",
+        ":integral_general_triangle",
+        ":integral_reference_triangle",
+        ":math_helper",
+        ":row_compliance_matrix",
+        ":test_helper",
+    ],
+)
+
+drake_cc_library(
+    name = "compliance_matrix",
+    srcs = [
+        "compliance_matrix.cc",
+        "integral_general_triangle.cc",
+        "integral_reference_triangle.cc",
+        "math_helper.cc",
+        "row_compliance_matrix.cc",
+    ],
+    hdrs = [
+        "compliance_matrix.h",
+        "integral_general_triangle.h",
+        "integral_reference_triangle.h",
+        "math_helper.h",
+        "row_compliance_matrix.h",
+    ],
+    deps = [
+        "//common:essential",
+    ],
+)
+
+drake_cc_library(
+    name = "row_compliance_matrix",
+    srcs = [
+        "integral_general_triangle.cc",
+        "integral_reference_triangle.cc",
+        "math_helper.cc",
+        "row_compliance_matrix.cc",
+    ],
+    hdrs = [
+        "integral_general_triangle.h",
+        "integral_reference_triangle.h",
+        "math_helper.h",
+        "row_compliance_matrix.h",
+    ],
+    deps = [
+        "//common:essential",
+    ],
+)
+
+drake_cc_library(
+    name = "integral_general_triangle",
+    srcs = [
+        "integral_general_triangle.cc",
+        "integral_reference_triangle.cc",
+        "math_helper.cc",
+    ],
+    hdrs = [
+        "integral_general_triangle.h",
+        "integral_reference_triangle.h",
+        "math_helper.h",
+    ],
+    deps = [
+        "//common:essential",
+    ],
+)
+
+drake_cc_library(
+    name = "integral_reference_triangle",
+    srcs = [
+        "integral_reference_triangle.cc",
+        "math_helper.cc",
+    ],
+    hdrs = [
+        "integral_reference_triangle.h",
+        "math_helper.h",
+    ],
+    deps = [
+        "//common:essential",
+    ],
+)
+
+drake_cc_library(
+    name = "math_helper",
+    srcs = ["math_helper.cc"],
+    hdrs = ["math_helper.h"],
+    deps = [
+        "//common:essential",
+    ],
+)
+
+drake_cc_library(
+    name = "test_helper",
+    srcs = [
+        "math_helper.cc",
+        "test_helper.cc",
+    ],
+    hdrs = [
+        "math_helper.h",
+        "test_helper.h",
+    ],
+    deps = [
+        "//common:essential",
+    ],
+)
+
+drake_cc_googletest(
+    name = "compliance_matrix_test",
+    deps = [
+        ":compliance_matrix",
+        ":test_helper",
+        "//common/test_utilities:eigen_matrix_compare",
+        "//solvers:moby_lcp_solver",
+    ],
+)
+
+drake_cc_googletest(
+    name = "row_compliance_matrix_test",
+    deps = [
+        ":row_compliance_matrix",
+        ":test_helper",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "integral_general_triangle_test",
+    deps = [
+        ":integral_general_triangle",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "integral_reference_triangle_test",
+    deps = [
+        ":integral_reference_triangle",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "math_helper_test",
+    deps = [
+        ":math_helper",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+drake_cc_googletest(
+    name = "test_helper_test",
+    deps = [
+        ":test_helper",
+        "//common/test_utilities:eigen_matrix_compare",
+    ],
+)
+
+add_lint_tests()
