@@ -137,16 +137,18 @@ void OutputScatteredPointsToVTK(
 void AppendCellCenteredVectorFieldToVTK(
     std::ofstream& file,
     const std::string& field_name,
-    const std::vector<Vector3<double>>& vector_field) {
-  const int num_nodes = vector_field.size();
+    const std::vector<Vector3<double>>& vector_field_G,
+    const Isometry3<double>& X_WG = Isometry3<double>::Identity()) {
+  const int num_nodes = vector_field_G.size();
 
   file << std::endl;
   file << "CELL_DATA " << num_nodes << std::endl;
   file << "VECTORS " + field_name + " double" << std::endl;
 
-  for (const auto& vector : vector_field) {
+  for (const auto& vector_G : vector_field_G) {
+    const auto vector_W = X_WG.linear() * vector_G;
     file << fmt::format("{:.8f} {:.8f} {:.8f}\n",
-                        vector[0], vector[1], vector[2]);
+                        vector_W[0], vector_W[1], vector_W[2]);
   }
   file << std::endl;
 }
@@ -154,16 +156,18 @@ void AppendCellCenteredVectorFieldToVTK(
 void AppendNodeCenteredVectorFieldToVTK(
     std::ofstream& file,
     const std::string& field_name,
-    const std::vector<Vector3<double>>& vector_field) {
-  const int num_nodes = vector_field.size();
+    const std::vector<Vector3<double>>& vector_field_G,
+    const Isometry3<double>& X_WG = Isometry3<double>::Identity()) {
+  const int num_nodes = vector_field_G.size();
 
   file << std::endl;
   file << "POINT_DATA " << num_nodes << std::endl;
   file << "VECTORS " + field_name + " double" << std::endl;
 
-  for (const auto& vector : vector_field) {
+  for (const auto& vector_G : vector_field_G) {
+    const auto vector_W = X_WG.linear() * vector_G;
     file << fmt::format("{:.8f} {:.8f} {:.8f}\n",
-                        vector[0], vector[1], vector[2]);
+                        vector_W[0], vector_W[1], vector_W[2]);
   }
   file << std::endl;
 }
