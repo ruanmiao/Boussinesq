@@ -114,15 +114,6 @@ double CalcForceOverMeshOfSphere(
     const Vector3<double>& center,
     const Vector3<double>& pressure_dir = Vector3<double>::UnitZ());
 
-///// Helper function can read an obj file to get mesh information
-///// @param
-///// @param triangles_in_mesh Indexes of points of triangles in the mesh
-///// @param pressure Pressure at each nodes in the mesh
-///// @returns Total force
-//void LoadObjFile(std::vector<Vector3<double>>& vertices,
-//                 std::vector<Vector3<double>>& triangles,
-//                 std::string obj_file_name);
-
 }  // namespace boussinesq_solver
 }  // namespace multibody
 }  // namespace drake
