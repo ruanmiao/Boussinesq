@@ -64,10 +64,6 @@ int DoMain() {
   FlipNormals(top_sphere.get());
   FlipNormals(bottom_sphere.get());
 
-  // Re-compute normals just in case for verification.
-  top_sphere->face_normals_G = CalcMeshFaceNormals(
-      top_sphere->points_G, top_sphere->triangles);
-
   const double radius = 1.0;
   const double penetration = 0.1;
   const double z_WSo = radius - penetration;
@@ -77,16 +73,16 @@ int DoMain() {
   Isometry3d X_WSbottom{Translation3d{Vector3d(0, 0, -1.0)}};
 
   // Write mesh and normals to a file.
-  std::ofstream bottom_sphere_file("top_sphere.vtk");
-  OutputMeshToVTK(bottom_sphere_file, bottom_sphere->points_G, bottom_sphere->triangles, X_WStop);
+  std::ofstream bottom_sphere_file("bottom_sphere.vtk");
+  OutputMeshToVTK(bottom_sphere_file, bottom_sphere->points_G, bottom_sphere->triangles, X_WSbottom);
   AppendCellCenteredVectorFieldToVTK(
       bottom_sphere_file, "FaceNormals", bottom_sphere->face_normals_G);
   AppendNodeCenteredVectorFieldToVTK(
       bottom_sphere_file, "NodeNormals", bottom_sphere->node_normals_G);
   bottom_sphere_file.close();
 
-  std::ofstream top_sphere_file("bottom_sphere.vtk");
-  OutputMeshToVTK(top_sphere_file, top_sphere->points_G, top_sphere->triangles, X_WSbottom);
+  std::ofstream top_sphere_file("top_sphere.vtk");
+  OutputMeshToVTK(top_sphere_file, top_sphere->points_G, top_sphere->triangles, X_WStop);
   AppendCellCenteredVectorFieldToVTK(
       top_sphere_file, "FaceNormals", top_sphere->face_normals_G);
   AppendNodeCenteredVectorFieldToVTK(
@@ -110,18 +106,6 @@ int DoMain() {
     return results.p_WoBs_W;
   });
 
-#if 0
-  std::vector<Vector3d> normals(2 * results.size());
-  std::transform(results.begin(), results.end(), normals.begin(),
-                 [](const PenetrationAsTrianglePair<double>& results) {
-                   return results.normal_A_W;
-                 });
-  std::transform(results.begin(), results.end(), normals.begin() + results.size(),
-                 [](const PenetrationAsTrianglePair<double>& results) {
-                   return results.normal_B_W;
-                 });
-#endif
-
   std::vector<Vector3d> normals;
   for (const auto& result : results) {
     normals.push_back(result.normal_A_W);
@@ -135,20 +119,6 @@ int DoMain() {
         file, "normals", normals);
     file.close();
   }
-
-#if 0
-  {
-    std::ofstream file("pointsA.vtk");
-    OutputScatteredPointsToVTK(file, pointsA);
-    file.close();
-  }
-
-  {
-    std::ofstream file("pointsB.vtk");
-    OutputScatteredPointsToVTK(file, pointsB);
-    file.close();
-  }
-#endif
 
   return 0;
 }

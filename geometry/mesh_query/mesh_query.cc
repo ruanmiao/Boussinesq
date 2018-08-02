@@ -70,6 +70,8 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         // For now we are assuming the distance is zero. Therefore verify this.
         DRAKE_DEMAND(distance <= -kNearSurfaceTolerance);
 
+        // Frame G is the frame of the mesh1. Therefore we must transform to
+        // the world frame.
         result.normal_A_W = X_WM1.linear() * mesh1.node_normals_G[node_index];
 
         // Since we assume that node_element points to local node "zero" in the
@@ -84,7 +86,9 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         result.triangle_B = point_mesh_result.triangle_index;
         result.p_WoBs_W = point_mesh_result.p_FP;
         result.barycentric_B = point_mesh_result.barycentric_P;
-        result.normal_B_W = X_WM2.linear() * point_mesh_result.normal_F;
+        // Frame F IS the world frame W on output from
+        // CalcPointToMeshNegativeDistance().
+        result.normal_B_W = point_mesh_result.normal_F;
 
         pairs.push_back(result);
       }
@@ -143,6 +147,7 @@ std::vector<Vector3<double>> CalcAreaWeightedNormals(
   std::vector<Vector3<double>> node_normals_F(num_nodes);
   for (int node_index = 0;  node_index < num_nodes; ++node_index) {
     node_normals_F[node_index] = rhs[node_index] / node_area[node_index];
+    node_normals_F[node_index].normalize();
   }
   return node_normals_F;
 }
@@ -291,7 +296,7 @@ bool CalcPointToMeshNegativeDistance(
   point_mesh_distance.triangle_index = triangle_index;
   point_mesh_distance.distance = distance;
   point_mesh_distance.p_FP = X_FA * p_AP;
-  point_mesh_distance.normal_F = X_FA * normal_A;
+  point_mesh_distance.normal_F = X_FA.linear() * normal_A;
   point_mesh_distance.triangle = triangle;
   point_mesh_distance.barycentric_P = barycentric_P;
 
