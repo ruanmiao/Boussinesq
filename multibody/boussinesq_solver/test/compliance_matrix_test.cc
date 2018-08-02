@@ -29,7 +29,7 @@ using Eigen::Isometry3d;
 /// The "expected" results is solved numerically by Matlab LCP Solver with
 /// its tolerance being 1e-8.
 /// The tolerance here is set accordance to the Matlab function tolerance.
-GTEST_TEST(ComplianceMatrixTest, ShpereContact) {
+GTEST_TEST(ComplianceMatrixTest, ShpereContactOnPlane) {
   const double r_sphere = 1.0;
   const double E_modulus = 1.0;
   const double indent_ratio = 0.2;
@@ -80,7 +80,7 @@ GTEST_TEST(ComplianceMatrixTest, ShpereContact) {
 /// The "expected" results is solved numerically by Matlab LCP Solver with
 /// its tolerance being 1e-8.
 /// The tolerance here is set accordance to the Matlab function tolerance.
-GTEST_TEST(ComplianceMatrixTest, ShpereContactRotated) {
+GTEST_TEST(ComplianceMatrixTest, ShpereContactOnRotatedPlane) {
   const double r_mesh = 1.0;
   const int elements_per_r = 10;
 
@@ -124,6 +124,63 @@ GTEST_TEST(ComplianceMatrixTest, ShpereContactRotated) {
   PRINT_VAR((compliance -  reference_compliance).norm());
   PRINT_VAR(kTolerance);
   PRINT_VAR(compliance.norm());
+}
+
+GTEST_TEST(ComplianceMatrixTest, ShpereContactOnShpere) {
+  const double r_sphere = 1.0;
+  const double E_modulus = 1.0;
+  const double indent_ratio = 0.15;
+  const double z0_sphere = r_sphere * (1 - indent_ratio);
+
+  const double r_contact = sqrt(r_sphere * r_sphere - z0_sphere * z0_sphere);
+
+  const double element_size = 0.1;
+  const int elements_per_r = floor((asin(r_contact / r_sphere)) /
+  (element_size / r_sphere )) + 1;
+  const double half_sector = element_size / r_sphere * elements_per_r;
+
+//  const int elements_per_r = 5;
+//  const double half_sector = 1.1 * asin(r_contact / r_sphere);
+
+//  const int elements_per_r = 20;
+//  const double half_sector = 2 * M_PI * 0.99;
+
+
+  Vector3d sphere_center(0.0, 0.0, z0_sphere);
+  std::pair<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3i>>
+      mesh_data = MeshSphere(
+      sphere_center, r_sphere, elements_per_r, half_sector);
+
+  const std::vector<Eigen::Vector3d>& points_in_mesh = mesh_data.first;
+  const std::vector<Eigen::Vector3i>& triangles_in_mesh = mesh_data.second;
+
+  int num_nodes = points_in_mesh.size();
+
+  MatrixX<double> compliance = CalcComplianceMatrix(
+      points_in_mesh, triangles_in_mesh, 1 / (E_modulus * M_PI));
+
+  VectorX<double> h0_gap(num_nodes);
+  for (int i_gap = 0; i_gap < num_nodes; i_gap++) {
+    const Vector3d pos = points_in_mesh.at(i_gap);
+    h0_gap(i_gap) =
+        z0_sphere - (sphere_center(2) - pos(2));
+  }
+
+  solvers::MobyLCPSolver<double> moby_LCP_solver;
+  VectorX<double> pressure_sol(num_nodes);
+
+  bool solved = moby_LCP_solver.SolveLcpLemke(
+      compliance, h0_gap, &pressure_sol);
+  OutputMeshToVTK(points_in_mesh, triangles_in_mesh, pressure_sol);
+
+  double total_force = CalcForceOverMeshOfSphere(
+      points_in_mesh, triangles_in_mesh, pressure_sol, sphere_center);
+
+  EXPECT_NEAR(total_force, 0.0, 10 * 1e-15);
+  PRINT_VAR(compliance.rows());
+  PRINT_VAR(total_force);
+  EXPECT_GT(moby_LCP_solver.get_num_pivots(), 0);
+  EXPECT_TRUE(solved);
 }
 
 }  // namespace

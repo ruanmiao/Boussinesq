@@ -38,6 +38,21 @@ std::pair<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3i>>
 MeshCircle(
     const Vector2<double>& o, double radius, int num_pr);
 
+/// Generate the mesh on a subset of the surface of a sphere given the origin
+/// and the radius of the sphere, with the sector specifying the size of the
+/// meshing area. The number of Vertices per half sector (origin included) is
+/// given as well.
+/// @param o Origin.
+/// @param radius Radius.
+/// @param num_pr Number of vertices per radius.
+/// @param half_sector Value of half the sector
+/// @returns The first vector in the return is the location of all nodes in
+/// the mesh. The second vector in the return is the node indexes of all the
+/// triangles in the mesh.
+std::pair<std::vector<Eigen::Vector3d>, std::vector<Eigen::Vector3i>>
+MeshSphere(
+    const Vector3<double> &o, double radius, int num_pr, double half_sector);
+
 /// Help to determine the index of a node in the whole mesh. Only used in the
 /// MeshSquare above. The three inputs specified the three iterator indexes in
 /// the three nested loops in MeshSquare.
@@ -46,7 +61,6 @@ MeshCircle(
 /// @param ipos Looping index specified the exact position.
 /// @returns The global node index of the node in the mesh.
 int FindIndexInMeshCircle(int ir, int itheta, int ipos);
-
 
 /// Return the pressure on each node given the points locations, where the
 /// pressure field function is p(pᵢ) = rᵢ.
@@ -67,14 +81,16 @@ Eigen::VectorXd GetPressureIntegrandX(
 /// @param points_in_mesh Poses of nodes in the mesh
 /// @param triangles_in_mesh Indexes of points of triangles in the mesh
 /// @param filename (with .vtk extension)
+/// @param enable Output to file or disregard this function
 /// @returns none
 bool OutputMeshToVTK(
     const std::vector<Vector3<double>>& points_in_mesh,
                      const std::vector<Vector3<int>>& triangles_in_mesh,
-                     const VectorX<double>& values);
+                     const VectorX<double>& values,
+                     bool enabled = true);
 
 /// Helper function computes the total force applied knowing the pressure over
-/// the mesh
+/// the mesh, where the mesh is in a 2D plane
 /// @param points_in_mesh Poses of nodes in the mesh
 /// @param triangles_in_mesh Indexes of points of triangles in the mesh
 /// @param pressure Pressure at each nodes in the mesh
@@ -83,7 +99,29 @@ double CalcForceOverMesh(const std::vector<Vector3<double>>& points_in_mesh,
                          const std::vector<Vector3<int>>& triangles_in_mesh,
                          const VectorX<double>& pressure);
 
+/// Helper function computes the total force applied knowing the pressure over
+/// the mesh of the surface of a sphere, where the mesh is in the 3D space.
+/// @param points_in_mesh Poses of nodes in the mesh
+/// @param triangles_in_mesh Indexes of points of triangles in the mesh
+/// @param pressure Pressure at each nodes in the mesh
+/// @param center Center of the sphere
+/// @param z_n normal direction of the half plane
+/// @returns Total force
+double CalcForceOverMeshOfSphere(
+    const std::vector<Vector3<double>>& points_in_mesh,
+    const std::vector<Vector3<int>>& triangles_in_mesh,
+    const VectorX<double>& pressure,
+    const Vector3<double>& center,
+    const Vector3<double>& pressure_dir = Vector3<double>::UnitZ());
 
+///// Helper function can read an obj file to get mesh information
+///// @param
+///// @param triangles_in_mesh Indexes of points of triangles in the mesh
+///// @param pressure Pressure at each nodes in the mesh
+///// @returns Total force
+//void LoadObjFile(std::vector<Vector3<double>>& vertices,
+//                 std::vector<Vector3<double>>& triangles,
+//                 std::string obj_file_name);
 
 }  // namespace boussinesq_solver
 }  // namespace multibody
