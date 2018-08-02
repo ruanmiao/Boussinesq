@@ -83,17 +83,45 @@ int DoMain() {
       Isometry3d::Identity(), *plane,
       X_WS, *sphere);
 
+  std::vector<Vector3d> pointsA(results.size());
+  std::transform(results.begin(), results.end(), pointsA.begin(),
+                 [](const PenetrationAsTrianglePair<double>& results) {
+                   return results.p_WoAs_W;
+                 });
+
   std::vector<Vector3d> pointsB(results.size());
   std::transform(results.begin(), results.end(), pointsB.begin(),
   [](const PenetrationAsTrianglePair<double>& results) {
     return results.p_WoBs_W;
   });
 
-  std::vector<Vector3d> pointsA(results.size());
-  std::transform(results.begin(), results.end(), pointsA.begin(),
+#if 0
+  std::vector<Vector3d> normals(2 * results.size());
+  std::transform(results.begin(), results.end(), normals.begin(),
                  [](const PenetrationAsTrianglePair<double>& results) {
-                   return results.p_WoAs_W;
+                   return results.normal_A_W;
                  });
+  std::transform(results.begin(), results.end(), normals.begin() + results.size(),
+                 [](const PenetrationAsTrianglePair<double>& results) {
+                   return results.normal_B_W;
+                 });
+#endif
+
+  std::vector<Vector3d> normals;
+  for (const auto& result : results) {
+    normals.push_back(result.normal_A_W);
+    normals.push_back(result.normal_B_W);
+  }
+
+  {
+    std::ofstream file("pairs.vtk");
+    OutputSegmentsToVTK(file, pointsA, pointsB);
+    AppendNodeCenteredVectorFieldToVTK(
+        file, "normals", normals);
+    file.close();
+  }
+
+#if 0
   {
     std::ofstream file("pointsA.vtk");
     OutputScatteredPointsToVTK(file, pointsA);
@@ -105,6 +133,7 @@ int DoMain() {
     OutputScatteredPointsToVTK(file, pointsB);
     file.close();
   }
+#endif
 
   return 0;
 }

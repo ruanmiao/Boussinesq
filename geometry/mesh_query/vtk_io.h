@@ -151,6 +151,66 @@ void AppendCellCenteredVectorFieldToVTK(
   file << std::endl;
 }
 
+void AppendNodeCenteredVectorFieldToVTK(
+    std::ofstream& file,
+    const std::string& field_name,
+    const std::vector<Vector3<double>>& vector_field) {
+  const int num_nodes = vector_field.size();
+
+  file << std::endl;
+  file << "POINT_DATA " << num_nodes << std::endl;
+  file << "VECTORS " + field_name + " double" << std::endl;
+
+  for (const auto& vector : vector_field) {
+    file << fmt::format("{:.8f} {:.8f} {:.8f}\n",
+                        vector[0], vector[1], vector[2]);
+  }
+  file << std::endl;
+}
+
+void OutputSegmentsToVTK(
+    std::ofstream& file,
+    const std::vector<Vector3<double>>& start_G,
+    const std::vector<Vector3<double>>& end_G) {
+  DRAKE_DEMAND(start_G.size() == end_G.size());
+  const int num_segments = start_G.size();
+
+  // Header for the VTK file.
+  file << "# vtk DataFile Version 3.0" << std::endl;
+  file << "Visualize mesh data" << std::endl;
+  file << "ASCII" << std::endl;
+  file << std::endl;
+  file << "DATASET UNSTRUCTURED_GRID" << std::endl;
+
+  // Header fot he points_G data.
+  file << "POINTS " << 2 * num_segments << " double" << std::endl;
+
+  // Write the points_G data.
+  for (int i = 0; i < num_segments; ++i) {
+    const auto& start = start_G[i];
+    const auto& end = end_G[i];
+    file << fmt::format("{:.8f} {:.8f} {:.8f}\n", start[0], start[1], start[2]);
+    file << fmt::format("{:.8f} {:.8f} {:.8f}\n", end[0], end[1], end[2]);
+  }
+  file << std::endl;
+
+  // Header for the elements (triangles in this case).
+  file << "CELLS " << num_segments << " " << num_segments * 3 << std::endl;
+
+  for (int i = 0; i < num_segments; ++i) {
+    file << "2 " << 2*i << " " << 2*i+1 << std::endl;
+  }
+  file << std::endl;
+
+  // VTK needs us to spell out the element type for each element.
+  // Cell type = 3 is for segments.
+  file << "CELL_TYPES " << num_segments << std::endl;
+  for (int i_tri = 0; i_tri < num_segments; i_tri++) {
+    file << "3" << std::endl;
+  }
+  file << std::endl;
+}
+
 }  // namespace mesh_query
 }  // namespace geometry
 }  // namespace drae
