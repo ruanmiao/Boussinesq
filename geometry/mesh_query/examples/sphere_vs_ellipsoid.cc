@@ -105,14 +105,14 @@ int DoMain() {
 
   std::vector<Vector3d> pointsA(results.size());
   std::transform(results.begin(), results.end(), pointsA.begin(),
-                 [](const PenetrationAsTrianglePair<double>& results) {
-                   return results.p_WoAs_W;
+                 [](const PenetrationAsTrianglePair<double>& pair) {
+                   return pair.p_WoAs_W;
                  });
 
   std::vector<Vector3d> pointsB(results.size());
   std::transform(results.begin(), results.end(), pointsB.begin(),
-  [](const PenetrationAsTrianglePair<double>& results) {
-    return results.p_WoBs_W;
+  [](const PenetrationAsTrianglePair<double>& pair) {
+    return pair.p_WoBs_W;
   });
 
   std::vector<Vector3d> normals;

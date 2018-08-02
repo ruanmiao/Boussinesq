@@ -66,7 +66,7 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         result.triangle_A = mesh1.node_element[node_index].first;
         result.p_WoAs_W = p_WQ;
 
-        const Vector3<double> p_WP = point_mesh_result.p_FP;
+        //const Vector3<double> p_WP = point_mesh_result.p_FP;
         const double distance = point_mesh_result.distance;
 
         // For now we are assuming the distance is zero. Therefore verify this.
@@ -222,7 +222,7 @@ bool CalcPointToMeshNegativeDistance(
   double max_neg_dist = -std::numeric_limits<double>::infinity();
   int max_neg_dist_triangle = -1;
   Vector3<double> p_AP;
-  double A1, A2, A3;
+  double A1(0), A2(0), A3(0);
 
   for (size_t triangle_index = 0;
        triangle_index < triangles.size(); ++triangle_index) {
