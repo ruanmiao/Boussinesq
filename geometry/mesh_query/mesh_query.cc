@@ -70,7 +70,7 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         // For now we are assuming the distance is zero. Therefore verify this.
         DRAKE_DEMAND(distance <= -kNearSurfaceTolerance);
 
-        result.normal_A_W = mesh1.node_normals_G[node_index];
+        result.normal_A_W = X_WM1.linear() * mesh1.node_normals_G[node_index];
 
         // Since we assume that node_element points to local node "zero" in the
         // mesh A triangle, the barycentric coordinates are 1, 0, 0.
@@ -84,7 +84,7 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         result.triangle_B = point_mesh_result.triangle_index;
         result.p_WoBs_W = point_mesh_result.p_FP;
         result.barycentric_B = point_mesh_result.barycentric_P;
-        result.normal_B_W = point_mesh_result.normal_F;
+        result.normal_B_W = X_WM2.linear() * point_mesh_result.normal_F;
 
         pairs.push_back(result);
       }
