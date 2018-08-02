@@ -97,11 +97,9 @@ void OutputMeshToVTK(
 }
 
 void OutputScatteredPointsToVTK(
-    const std::string& file_name,
+    std::ofstream& file,
     const std::vector<Vector3<double>>& points) {
   const int num_nodes = points.size();
-
-  std::ofstream file(file_name);
 
   // Header for the VTK file.
   file << "# vtk DataFile Version 3.0" << std::endl;
@@ -126,7 +124,13 @@ void OutputScatteredPointsToVTK(
     file << "1" << std::endl;
   }
   file << std::endl;
+}
 
+void OutputScatteredPointsToVTK(
+    const std::string& file_name,
+    const std::vector<Vector3<double>>& points) {
+  std::ofstream file(file_name);
+  OutputScatteredPointsToVTK(file, points);
   file.close();
 }
 

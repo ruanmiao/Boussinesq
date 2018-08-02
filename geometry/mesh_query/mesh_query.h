@@ -67,12 +67,8 @@ struct PointMeshDistance {
 };
 
 std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
-    const Isometry3<double>& X_FA,
-    const std::vector<Vector3<double>>& meshA_points_A,
-    const std::vector<Vector3<int>>& meshA_triangles,
-    const Isometry3<double>& X_FB,
-    const std::vector<Vector3<double>>& meshB_points_B,
-    const std::vector<Vector3<int>>& meshB_triangles);
+    const Isometry3<double>& X_WA, const Mesh<double>& meshA,
+    const Isometry3<double>& X_WB, const Mesh<double>& meshB);
 
 /// Computes the signed distance from the query point Q to mesh A.
 bool CalcPointToMeshNegativeDistance(

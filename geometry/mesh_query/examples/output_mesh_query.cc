@@ -51,6 +51,11 @@ int DoMain() {
 
   std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
       "drake/geometry/mesh_query/examples/sphere.obj");
+  sphere->mesh_index = 0;
+
+  std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
+      "drake/geometry/mesh_query/examples/big_triangle.obj");
+  plane->mesh_index = 1;
 
   // For this example normals in the obj point inward and therefore we flip
   // them.
@@ -66,12 +71,41 @@ int DoMain() {
 
   Isometry3d X_WS{Translation3d{Vector3d(0, 0, z_WSo)}};
 
-  std::ofstream file("sphere.vtk");
-  OutputMeshToVTK(file, sphere->points_G, sphere->triangles, X_WS);
-  AppendCellCenteredVectorFieldToVTK(file, "normals", sphere->face_normals_G);
-  file.close();
+  // Write mesh and normals to a file.
+  std::ofstream spere_file("sphere.vtk");
+  OutputMeshToVTK(spere_file, sphere->points_G, sphere->triangles, X_WS);
+  AppendCellCenteredVectorFieldToVTK(
+      spere_file, "normals", sphere->face_normals_G);
+  spere_file.close();
 
-  //OutputScatteredPointsToVTK("sphere_points.vtk", points);
+  // Perform the mesh-mesh query.
+  std::vector<PenetrationAsTrianglePair<double>> results = MeshToMeshQuery(
+      Isometry3d::Identity(), *plane,
+      X_WS, *sphere);
+
+  std::vector<Vector3d> pointsB(results.size());
+  std::transform(results.begin(), results.end(), pointsB.begin(),
+  [](const PenetrationAsTrianglePair<double>& results) {
+    return results.p_WoBs_W;
+  });
+
+  std::vector<Vector3d> pointsA(results.size());
+  std::transform(results.begin(), results.end(), pointsA.begin(),
+                 [](const PenetrationAsTrianglePair<double>& results) {
+                   return results.p_WoAs_W;
+                 });
+  {
+    std::ofstream file("pointsA.vtk");
+    OutputScatteredPointsToVTK(file, pointsA);
+    file.close();
+  }
+
+  {
+    std::ofstream file("pointsB.vtk");
+    OutputScatteredPointsToVTK(file, pointsB);
+    file.close();
+  }
+
   return 0;
 }
 
