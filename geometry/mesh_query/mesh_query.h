@@ -26,6 +26,8 @@ struct Mesh {
   // nodes.
   std::vector<Vector3<double>> face_normals_G;
 
+  std::vector<Vector3<double>> node_normals_G;
+
   // A conveniently pre-computed array such that for a node_index then
   // node_element[node_index].first is an element of which node_index is a
   // vertex.
@@ -38,6 +40,8 @@ struct Mesh {
 std::vector<Vector3<double>> CalcMeshFaceNormals(
     const std::vector<Vector3<double>>& points_A,
     const std::vector<Vector3<int>>& triangles);
+
+std::vector<Vector3<double>> CalcAreaWeightedNormals(const Mesh<double>& mesh);
 
 void FlipNormals(Mesh<double>* mesh);
 

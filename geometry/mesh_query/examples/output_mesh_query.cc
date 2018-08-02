@@ -25,7 +25,9 @@ std::unique_ptr<Mesh<double>> LoadMeshFromObj(
   auto mesh = std::make_unique<Mesh<double>>();
   mesh_loader.LoadObjFile(&mesh->points_G, &mesh->triangles);
 
+  // Compute normals.
   mesh->face_normals_G = CalcMeshFaceNormals(mesh->points_G, mesh->triangles);
+  mesh->node_normals_G = CalcAreaWeightedNormals(*mesh);
 
   const int num_points = mesh->points_G.size();
   // Allocate and initialize to invalid index values.
@@ -75,7 +77,9 @@ int DoMain() {
   std::ofstream spere_file("sphere.vtk");
   OutputMeshToVTK(spere_file, sphere->points_G, sphere->triangles, X_WS);
   AppendCellCenteredVectorFieldToVTK(
-      spere_file, "normals", sphere->face_normals_G);
+      spere_file, "FaceNormals", sphere->face_normals_G);
+  AppendNodeCenteredVectorFieldToVTK(
+      spere_file, "NodeNormals", sphere->node_normals_G);
   spere_file.close();
 
   // Perform the mesh-mesh query.
