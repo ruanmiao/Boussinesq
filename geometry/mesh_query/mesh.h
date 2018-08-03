@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include <fmt/format.h>
@@ -38,6 +39,11 @@ struct Mesh {
   // that element.
   // The element assigned to node_index is arbitrary.
   std::vector<std::pair<int, int>> node_element;
+
+  // A vector of size num_nodes = points_G.size().
+  // Entry at node_index contains the set of all triangles adjacent to
+  // node_index.
+  std::vector<std::vector<int>> node_triangles;
 };
 
 double CalcTriangleArea(

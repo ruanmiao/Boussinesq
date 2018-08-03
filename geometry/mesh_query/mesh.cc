@@ -61,6 +61,16 @@ std::unique_ptr<Mesh<double>> LoadMeshFromObj(
     }
   }
 
+  // Fill in the inverse of the connectivities.
+  mesh->node_triangles.resize(num_points);
+  for (int element_index = 0; element_index < num_elements; ++element_index) {
+    const auto &triangle = mesh->triangles[element_index];
+    for (int i = 0; i < 3; ++i) {
+      const int node_index = triangle[i];
+      mesh->node_triangles[node_index].push_back(element_index);
+    }
+  }
+
   return mesh;
 }
 

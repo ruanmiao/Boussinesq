@@ -53,6 +53,11 @@ bool CalcPointToMeshNegativeDistance(
     const Vector3<double>& p_FQ,
     PointMeshDistance<double>* point_mesh_distance_ptr = nullptr);
 
+std::pair<std::unique_ptr<Mesh<double>>, std::unique_ptr<Mesh<double>>>
+MakeLocalPatchMeshes(
+    std::vector<PenetrationAsTrianglePair<double>>* pairs,
+    const Mesh<double>& meshA, const Mesh<double>& meshB);
+
 }  // namespace mesh_query
 }  // namespace geometry
 }  // namespace drae

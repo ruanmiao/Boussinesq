@@ -72,6 +72,18 @@ int DoMain() {
       X_WEllipsoid, *ellipsoid,
       X_WSphere, *sphere);
 
+  auto patches = MakeLocalPatchMeshes(&results, *ellipsoid, *sphere);
+  std::unique_ptr<Mesh<double>> ellipsoid_patch = std::move(patches.first);
+  std::unique_ptr<Mesh<double>> sphere_patch = std::move(patches.second);
+
+  OutputMeshToVTK("ellipsoid_patch.vtk",
+                  ellipsoid_patch->points_G, ellipsoid_patch->triangles,
+                  X_WEllipsoid);
+
+  OutputMeshToVTK("sphere_patch.vtk",
+                  sphere_patch->points_G, sphere_patch->triangles,
+                  X_WSphere);
+
   std::vector<Vector3d> pointsA(results.size());
   std::transform(results.begin(), results.end(), pointsA.begin(),
                  [](const PenetrationAsTrianglePair<double>& pair) {

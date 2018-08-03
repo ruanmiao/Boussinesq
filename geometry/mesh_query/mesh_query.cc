@@ -1,4 +1,5 @@
 #include "drake/geometry/mesh_query/mesh_query.h"
+#include "drake/multibody/shapes/geometry.h"
 
 #include <algorithm>
 #include <limits>
@@ -95,6 +96,131 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
   return pairs;
 }
 
+std::pair<std::unique_ptr<Mesh<double>>, std::unique_ptr<Mesh<double>>>
+MakeLocalPatchMeshes(
+    std::vector<PenetrationAsTrianglePair<double>>* pairs,
+    const Mesh<double>& meshA, const Mesh<double>& meshB) {
+  auto meshA_patch = std::make_unique<Mesh<double>>();
+  auto meshB_patch = std::make_unique<Mesh<double>>();
+
+  meshA_patch->mesh_index = meshA.mesh_index;
+  meshB_patch->mesh_index = meshB.mesh_index;
+
+  std::set<int> patchA_triangles;
+  std::set<int> patchB_triangles;
+
+  std::set<int> patchA_nodes;
+  std::set<int> patchB_nodes;
+
+  auto InsertTriangle = [](
+      int triangle_index, const Vector3<int>& triangle,
+      std::set<int>* patch_triangles,
+      std::set<int>* patch_nodes) {
+    patch_triangles->insert(triangle_index);
+    for (int i = 0; i < 3; ++i) {
+      patch_nodes->insert(triangle[i]);
+    }
+  };
+
+  auto InsertNodeAndAdjacentTriangles = [InsertTriangle](
+      int node_index, const std::vector<int>& node_triangles,
+      const std::vector<Vector3<int>>& mesh_triangles,
+      std::set<int>* patch_triangles,
+      std::set<int>* patch_nodes) {
+    patch_nodes->insert(node_index);
+    for (int triangle_index : node_triangles) {
+      InsertTriangle(triangle_index, mesh_triangles[triangle_index],
+                     patch_triangles, patch_nodes);
+    }
+  };
+
+  auto InsertTriangleAndAdjacentTriangles = [InsertNodeAndAdjacentTriangles](
+      int triangle_index, const Vector3<int>& triangle,
+      const std::vector<Vector3<int>>& mesh_triangles,
+      const std::vector<std::vector<int>>& nodes_triangles,
+      std::set<int>* patch_triangles,
+      std::set<int>* patch_nodes) {
+    patch_triangles->insert(triangle_index);
+
+    for (int i = 0; i < 3; ++i) {
+      const int node_index = triangle[i];
+      const auto& node_triangles = nodes_triangles[node_index];
+      InsertNodeAndAdjacentTriangles(
+          node_index, node_triangles, mesh_triangles,
+          patch_triangles, patch_nodes);
+    }
+  };
+
+  // Crete the set of triangles in the patch for each mesh.
+  // 1) First add the triangles directly referenced by th query pairs.
+  for (const auto& pair : *pairs) {
+    int triangle_index = pair.triangle_A;
+    if (pair.meshA_index == meshA.mesh_index ) {
+      const auto& triangle = meshA.triangles[triangle_index];
+      InsertTriangleAndAdjacentTriangles(
+          triangle_index, triangle,
+          meshA.triangles, meshA.node_triangles,
+          &patchA_triangles, &patchA_nodes);
+    } else {
+      const auto& triangle = meshB.triangles[triangle_index];
+      InsertTriangleAndAdjacentTriangles(
+          triangle_index, triangle,
+          meshB.triangles, meshB.node_triangles,
+          &patchB_triangles, &patchB_nodes);
+    }
+
+    triangle_index = pair.triangle_B;
+    if (pair.meshB_index == meshA.mesh_index) {
+      const auto& triangle = meshA.triangles[triangle_index];
+      InsertTriangleAndAdjacentTriangles(
+          triangle_index, triangle,
+          meshA.triangles, meshA.node_triangles,
+                     &patchA_triangles, &patchA_nodes);
+    } else {
+      const auto& triangle = meshB.triangles[triangle_index];
+      InsertTriangleAndAdjacentTriangles(
+          triangle_index, triangle,
+          meshB.triangles, meshB.node_triangles,
+          &patchB_triangles, &patchB_nodes);
+    }
+  }
+
+  auto ConvertPatchSetsToMesh = [](
+      const std::set<int>& patch_nodes,
+      const std::set<int>& patch_triangles,
+      const Mesh<double>& mesh,
+      Mesh<double>* patch_mesh) {
+    std::vector<int> map_to_patch(mesh.points_G.size(), -1);
+    for (int node_index : patch_nodes) {
+      // Define the local patch index to node_index
+      map_to_patch[node_index] = patch_mesh->points_G.size();
+      patch_mesh->points_G.push_back(mesh.points_G[node_index]);
+    }
+
+    for (int triangle_index : patch_triangles) {
+      const auto& triangle = mesh.triangles[triangle_index];
+
+      DRAKE_DEMAND(map_to_patch[triangle[0]] >= 0);
+      DRAKE_DEMAND(map_to_patch[triangle[1]] >= 0);
+      DRAKE_DEMAND(map_to_patch[triangle[2]] >= 0);
+
+      const Vector3<int> pach_triangle(
+          map_to_patch[triangle[0]],
+          map_to_patch[triangle[1]],
+          map_to_patch[triangle[2]]);
+
+      patch_mesh->triangles.push_back(pach_triangle);
+    }
+  };
+
+  ConvertPatchSetsToMesh(patchA_nodes, patchA_triangles, meshA,
+                         meshA_patch.get());
+
+  ConvertPatchSetsToMesh(patchB_nodes, patchB_triangles, meshB,
+                         meshB_patch.get());
+
+  return std::make_pair(std::move(meshA_patch), std::move(meshB_patch));
+};
 
 bool CalcPointToMeshNegativeDistance(
     const Isometry3<double>& X_FA,
