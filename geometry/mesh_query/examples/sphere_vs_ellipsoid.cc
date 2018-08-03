@@ -71,13 +71,21 @@ int DoMain() {
   top_sphere_file.close();
 
   // Perform the mesh-mesh query.
+  // The triangles referenced in the pairs are "global indexes" in the original
+  // full meshes.
   std::vector<PenetrationAsTrianglePair<double>> results = MeshToMeshQuery(
       X_WEllipsoid, *ellipsoid,
       X_WSphere, *sphere);
 
+  // This call creates the two patches on each mesh and updates "results" so
+  // that the triangle indexes in each pair are "local indexes" to the patch
+  // meshes.
   auto patches = MakeLocalPatchMeshes(&results, *ellipsoid, *sphere);
   std::unique_ptr<Mesh<double>> ellipsoid_patch = std::move(patches.first);
   std::unique_ptr<Mesh<double>> sphere_patch = std::move(patches.second);
+
+  PRINT_VAR(sphere_patch->points_G.size());
+  PRINT_VAR(ellipsoid_patch->points_G.size());
 
   OutputMeshToVTK("ellipsoid_patch.vtk",
                   ellipsoid_patch->points_G, ellipsoid_patch->triangles,
@@ -119,15 +127,15 @@ int DoMain() {
   for (const auto& pair : results) {
 
     if (pair.meshA_index == sphere->mesh_index) {
-      sphere_patch_triangles.push_back(pair.triangle_A);
+      sphere_patch_triangles.push_back(pair.triangleA_index);
     } else {
-      ellipsoid_patch_triangles.push_back(pair.triangle_A);
+      ellipsoid_patch_triangles.push_back(pair.triangleA_index);
     }
 
     if (pair.meshB_index == sphere->mesh_index) {
-      sphere_patch_triangles.push_back(pair.triangle_B);
+      sphere_patch_triangles.push_back(pair.triangleB_index);
     } else {
-      ellipsoid_patch_triangles.push_back(pair.triangle_B);
+      ellipsoid_patch_triangles.push_back(pair.triangleB_index);
     }
   }
 

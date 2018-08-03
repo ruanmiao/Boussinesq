@@ -50,7 +50,8 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         //////////////////////////////////////////////////////////////////////////
 
         result.meshA_index = mesh1.mesh_index;
-        result.triangle_A = mesh1.node_element[node_index].first;
+        result.triangleA_index = mesh1.node_element[node_index].first;
+        result.triangleA = mesh1.triangles[result.triangleA_index];
         result.p_WoAs_W = p_WQ;
 
         //const Vector3<double> p_WP = point_mesh_result.p_FP;
@@ -72,7 +73,8 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         // MESH B INFO
         //////////////////////////////////////////////////////////////////////////
         result.meshB_index = mesh2.mesh_index;
-        result.triangle_B = point_mesh_result.triangle_index;
+        result.triangleB_index = point_mesh_result.triangle_index;
+        result.triangleB = mesh2.triangles[result.triangleB_index];
         result.p_WoBs_W = point_mesh_result.p_FP;
         result.barycentric_B = point_mesh_result.barycentric_P;
         // Frame F IS the world frame W on output from
@@ -154,7 +156,7 @@ MakeLocalPatchMeshes(
   // Crete the set of triangles in the patch for each mesh.
   // 1) First add the triangles directly referenced by th query pairs.
   for (const auto& pair : *pairs) {
-    int triangle_index = pair.triangle_A;
+    int triangle_index = pair.triangleA_index;
     if (pair.meshA_index == meshA.mesh_index ) {
       const auto& triangle = meshA.triangles[triangle_index];
       InsertTriangleAndAdjacentTriangles(
@@ -169,7 +171,7 @@ MakeLocalPatchMeshes(
           &patchB_triangles, &patchB_nodes);
     }
 
-    triangle_index = pair.triangle_B;
+    triangle_index = pair.triangleB_index;
     if (pair.meshB_index == meshA.mesh_index) {
       const auto& triangle = meshA.triangles[triangle_index];
       InsertTriangleAndAdjacentTriangles(
@@ -227,15 +229,28 @@ MakeLocalPatchMeshes(
                          meshB_patch.get());
 
   for (auto& pair : *pairs) {
-    pair.triangle_A = pair.meshA_index == meshA.mesh_index ?
-                      patchA_triangles_map.at(pair.triangle_A) :
-                      patchB_triangles_map.at(pair.triangle_A);
-    DRAKE_DEMAND(pair.triangle_A >= 0);
+    pair.triangleA_index = pair.meshA_index == meshA.mesh_index ?
+                      patchA_triangles_map.at(pair.triangleA_index) :
+                      patchB_triangles_map.at(pair.triangleA_index);
+    DRAKE_DEMAND(pair.triangleA_index >= 0);
 
-    pair.triangle_B = pair.meshB_index == meshA.mesh_index ?
-                      patchA_triangles_map.at(pair.triangle_B) :
-                      patchB_triangles_map.at(pair.triangle_B);
-    DRAKE_DEMAND(pair.triangle_B >= 0);
+    if (pair.meshA_index == meshA.mesh_index) {
+      pair.triangleA = meshA_patch->triangles[pair.triangleA_index];
+    } else {
+      pair.triangleA = meshB_patch->triangles[pair.triangleA_index];
+    }
+
+    pair.triangleB_index = pair.meshB_index == meshA.mesh_index ?
+                      patchA_triangles_map.at(pair.triangleB_index) :
+                      patchB_triangles_map.at(pair.triangleB_index);
+
+    if (pair.meshB_index == meshA.mesh_index) {
+      pair.triangleB = meshA_patch->triangles[pair.triangleB_index];
+    } else {
+      pair.triangleB = meshB_patch->triangles[pair.triangleB_index];
+    }
+
+    DRAKE_DEMAND(pair.triangleB_index >= 0);
   }
 
   return std::make_pair(std::move(meshA_patch), std::move(meshB_patch));
