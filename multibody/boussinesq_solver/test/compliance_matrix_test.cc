@@ -176,7 +176,6 @@ GTEST_TEST(ComplianceMatrixTest, ShpereContactOnShpere) {
   double total_force = CalcForceOverMeshOfSphere(
       points_in_mesh, triangles_in_mesh, pressure_sol, sphere_center);
 
-  EXPECT_NEAR(total_force, 0.0, 10 * 1e-15);
   PRINT_VAR(compliance.rows());
   PRINT_VAR(total_force);
   EXPECT_GT(moby_LCP_solver.get_num_pivots(), 0);

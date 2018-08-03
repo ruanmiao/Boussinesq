@@ -18,9 +18,35 @@ drake_cc_package_library(
         ":compliance_matrix",
         ":integral_general_triangle",
         ":integral_reference_triangle",
+        ":jacobian_H_matrix",
         ":math_helper",
         ":row_compliance_matrix",
         ":test_helper",
+    ],
+)
+
+drake_cc_library(
+    name = "jacobian_H_matrix",
+    srcs = [
+        "compliance_matrix.cc",
+        "integral_general_triangle.cc",
+        "integral_reference_triangle.cc",
+        "jacobian_H_matrix.cc",
+        "math_helper.cc",
+        "row_compliance_matrix.cc",
+    ],
+    hdrs = [
+        "compliance_matrix.h",
+        "integral_general_triangle.h",
+        "integral_reference_triangle.h",
+        "jacobian_H_matrix.h",
+        "math_helper.h",
+        "row_compliance_matrix.h",
+    ],
+    deps = [
+        "//common:essential",
+        "//geometry/mesh_query",
+        "//multibody/shapes",
     ],
 )
 
