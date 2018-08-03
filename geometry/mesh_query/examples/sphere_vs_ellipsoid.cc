@@ -8,6 +8,9 @@
 #include "drake/geometry/mesh_query/mesh_query.h"
 #include "drake/multibody/shapes/geometry.h"
 
+#include <iostream>
+#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
+
 namespace drake {
 namespace geometry {
 namespace mesh_query {
@@ -108,6 +111,32 @@ int DoMain() {
     AppendNodeCenteredVectorFieldToVTK(
         file, "normals", normals);
     file.close();
+  }
+
+  // Print out patches elements just for verification.
+  std::vector<int> sphere_patch_triangles;
+  std::vector<int> ellipsoid_patch_triangles;
+  for (const auto& pair : results) {
+
+    if (pair.meshA_index == sphere->mesh_index) {
+      sphere_patch_triangles.push_back(pair.triangle_A);
+    } else {
+      ellipsoid_patch_triangles.push_back(pair.triangle_A);
+    }
+
+    if (pair.meshB_index == sphere->mesh_index) {
+      sphere_patch_triangles.push_back(pair.triangle_B);
+    } else {
+      ellipsoid_patch_triangles.push_back(pair.triangle_B);
+    }
+  }
+
+  for (auto sphere_triangle : sphere_patch_triangles) {
+    PRINT_VAR(sphere_triangle);
+  }
+
+  for (auto ellipsoid_triangle : ellipsoid_patch_triangles) {
+    PRINT_VAR(ellipsoid_triangle);
   }
 
   return 0;

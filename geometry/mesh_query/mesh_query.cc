@@ -190,34 +190,53 @@ MakeLocalPatchMeshes(
       const std::set<int>& patch_triangles,
       const Mesh<double>& mesh,
       Mesh<double>* patch_mesh) {
-    std::vector<int> map_to_patch(mesh.points_G.size(), -1);
+    std::vector<int> triangles_map(mesh.triangles.size(), -1);
+
+    std::vector<int> nodes_map(mesh.points_G.size(), -1);
     for (int node_index : patch_nodes) {
       // Define the local patch index to node_index
-      map_to_patch[node_index] = patch_mesh->points_G.size();
+      nodes_map[node_index] = patch_mesh->points_G.size();
       patch_mesh->points_G.push_back(mesh.points_G[node_index]);
     }
 
     for (int triangle_index : patch_triangles) {
       const auto& triangle = mesh.triangles[triangle_index];
 
-      DRAKE_DEMAND(map_to_patch[triangle[0]] >= 0);
-      DRAKE_DEMAND(map_to_patch[triangle[1]] >= 0);
-      DRAKE_DEMAND(map_to_patch[triangle[2]] >= 0);
+      DRAKE_DEMAND(nodes_map[triangle[0]] >= 0);
+      DRAKE_DEMAND(nodes_map[triangle[1]] >= 0);
+      DRAKE_DEMAND(nodes_map[triangle[2]] >= 0);
 
       const Vector3<int> pach_triangle(
-          map_to_patch[triangle[0]],
-          map_to_patch[triangle[1]],
-          map_to_patch[triangle[2]]);
+          nodes_map[triangle[0]],
+          nodes_map[triangle[1]],
+          nodes_map[triangle[2]]);
 
+      triangles_map[triangle_index] = patch_mesh->triangles.size();
       patch_mesh->triangles.push_back(pach_triangle);
     }
+
+    return triangles_map;
   };
 
-  ConvertPatchSetsToMesh(patchA_nodes, patchA_triangles, meshA,
+  auto patchA_triangles_map =
+      ConvertPatchSetsToMesh(patchA_nodes, patchA_triangles, meshA,
                          meshA_patch.get());
 
-  ConvertPatchSetsToMesh(patchB_nodes, patchB_triangles, meshB,
+  auto patchB_triangles_map =
+      ConvertPatchSetsToMesh(patchB_nodes, patchB_triangles, meshB,
                          meshB_patch.get());
+
+  for (auto& pair : *pairs) {
+    pair.triangle_A = pair.meshA_index == meshA.mesh_index ?
+                      patchA_triangles_map.at(pair.triangle_A) :
+                      patchB_triangles_map.at(pair.triangle_A);
+    DRAKE_DEMAND(pair.triangle_A >= 0);
+
+    pair.triangle_B = pair.meshB_index == meshA.mesh_index ?
+                      patchA_triangles_map.at(pair.triangle_B) :
+                      patchB_triangles_map.at(pair.triangle_B);
+    DRAKE_DEMAND(pair.triangle_B >= 0);
+  }
 
   return std::make_pair(std::move(meshA_patch), std::move(meshB_patch));
 };
