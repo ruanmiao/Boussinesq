@@ -14,11 +14,25 @@ package(
 )
 
 drake_cc_library(
+    name = "mesh",
+    srcs = ["mesh.cc"],
+    hdrs = ["mesh.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//common:essential",
+        "//common:find_resource",
+        "//geometry/query_results:penetration_as_triangle_pair",
+        "//multibody/shapes",
+    ],
+)
+
+drake_cc_library(
     name = "mesh_query",
     srcs = ["mesh_query.cc"],
     hdrs = ["mesh_query.h"],
     visibility = ["//visibility:public"],
     deps = [
+        ":mesh",
         "//common:essential",
         "//geometry/query_results:penetration_as_triangle_pair",
     ],

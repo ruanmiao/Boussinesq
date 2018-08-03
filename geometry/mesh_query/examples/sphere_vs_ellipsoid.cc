@@ -18,44 +18,13 @@ using Eigen::Translation3d;
 using Eigen::Isometry3d;
 using Eigen::Vector3d;
 
-std::unique_ptr<Mesh<double>> LoadMeshFromObj(
-    const std::string& file_name) {
-  const auto resource_name = FindResourceOrThrow(file_name);
-  DrakeShapes::Mesh mesh_loader(resource_name, resource_name);
-
-  auto mesh = std::make_unique<Mesh<double>>();
-  mesh_loader.LoadObjFile(&mesh->points_G, &mesh->triangles);
-
-  // Compute normals.
-  mesh->face_normals_G = CalcMeshFaceNormals(mesh->points_G, mesh->triangles);
-  mesh->node_normals_G = CalcAreaWeightedNormals(*mesh);
-
-  const int num_points = mesh->points_G.size();
-  // Allocate and initialize to invalid index values.
-  mesh->node_element.resize(num_points, std::make_pair(-1, -1));
-
-  // Arbitrarily fill in mesh->node_element.
-  const int num_elements = mesh->triangles.size();
-  for (int element_index = 0; element_index < num_elements; ++element_index) {
-    const auto& triangle = mesh->triangles[element_index];
-    for (int i = 0; i < 3; ++i) {
-      const int node_index = triangle[i];
-      if (mesh->node_element[node_index].first < 0) {  // not yet initialized.
-        mesh->node_element[node_index].first = element_index;
-        mesh->node_element[node_index].second = i;
-      }
-    }
-  }
-
-  return mesh;
-}
-
 int DoMain() {
-
+  // Load mesh for a sphere.
   std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
       "drake/geometry/mesh_query/examples/sphere.obj");
   sphere->mesh_index = 0;
 
+  // Load mesh for an ellipsoid.
   std::unique_ptr<Mesh<double>> ellipsoid = LoadMeshFromObj(
       "drake/geometry/mesh_query/examples/ellipsoid.obj");
   ellipsoid->mesh_index = 1;
