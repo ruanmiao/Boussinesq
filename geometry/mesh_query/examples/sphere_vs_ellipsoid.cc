@@ -8,6 +8,9 @@
 #include "drake/geometry/mesh_query/mesh_query.h"
 #include "drake/multibody/shapes/geometry.h"
 
+#include <iostream>
+#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
+
 namespace drake {
 namespace geometry {
 namespace mesh_query {
@@ -18,44 +21,13 @@ using Eigen::Translation3d;
 using Eigen::Isometry3d;
 using Eigen::Vector3d;
 
-std::unique_ptr<Mesh<double>> LoadMeshFromObj(
-    const std::string& file_name) {
-  const auto resource_name = FindResourceOrThrow(file_name);
-  DrakeShapes::Mesh mesh_loader(resource_name, resource_name);
-
-  auto mesh = std::make_unique<Mesh<double>>();
-  mesh_loader.LoadObjFile(&mesh->points_G, &mesh->triangles);
-
-  // Compute normals.
-  mesh->face_normals_G = CalcMeshFaceNormals(mesh->points_G, mesh->triangles);
-  mesh->node_normals_G = CalcAreaWeightedNormals(*mesh);
-
-  const int num_points = mesh->points_G.size();
-  // Allocate and initialize to invalid index values.
-  mesh->node_element.resize(num_points, std::make_pair(-1, -1));
-
-  // Arbitrarily fill in mesh->node_element.
-  const int num_elements = mesh->triangles.size();
-  for (int element_index = 0; element_index < num_elements; ++element_index) {
-    const auto& triangle = mesh->triangles[element_index];
-    for (int i = 0; i < 3; ++i) {
-      const int node_index = triangle[i];
-      if (mesh->node_element[node_index].first < 0) {  // not yet initialized.
-        mesh->node_element[node_index].first = element_index;
-        mesh->node_element[node_index].second = i;
-      }
-    }
-  }
-
-  return mesh;
-}
-
 int DoMain() {
-
+  // Load mesh for a sphere.
   std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
       "drake/geometry/mesh_query/examples/sphere.obj");
   sphere->mesh_index = 0;
 
+  // Load mesh for an ellipsoid.
   std::unique_ptr<Mesh<double>> ellipsoid = LoadMeshFromObj(
       "drake/geometry/mesh_query/examples/ellipsoid.obj");
   ellipsoid->mesh_index = 1;
@@ -99,9 +71,29 @@ int DoMain() {
   top_sphere_file.close();
 
   // Perform the mesh-mesh query.
+  // The triangles referenced in the pairs are "global indexes" in the original
+  // full meshes.
   std::vector<PenetrationAsTrianglePair<double>> results = MeshToMeshQuery(
       X_WEllipsoid, *ellipsoid,
       X_WSphere, *sphere);
+
+  // This call creates the two patches on each mesh and updates "results" so
+  // that the triangle indexes in each pair are "local indexes" to the patch
+  // meshes.
+  auto patches = MakeLocalPatchMeshes(&results, *ellipsoid, *sphere);
+  std::unique_ptr<Mesh<double>> ellipsoid_patch = std::move(patches.first);
+  std::unique_ptr<Mesh<double>> sphere_patch = std::move(patches.second);
+
+  PRINT_VAR(sphere_patch->points_G.size());
+  PRINT_VAR(ellipsoid_patch->points_G.size());
+
+  OutputMeshToVTK("ellipsoid_patch.vtk",
+                  ellipsoid_patch->points_G, ellipsoid_patch->triangles,
+                  X_WEllipsoid);
+
+  OutputMeshToVTK("sphere_patch.vtk",
+                  sphere_patch->points_G, sphere_patch->triangles,
+                  X_WSphere);
 
   std::vector<Vector3d> pointsA(results.size());
   std::transform(results.begin(), results.end(), pointsA.begin(),
@@ -127,6 +119,32 @@ int DoMain() {
     AppendNodeCenteredVectorFieldToVTK(
         file, "normals", normals);
     file.close();
+  }
+
+  // Print out patches elements just for verification.
+  std::vector<int> sphere_patch_triangles;
+  std::vector<int> ellipsoid_patch_triangles;
+  for (const auto& pair : results) {
+
+    if (pair.meshA_index == sphere->mesh_index) {
+      sphere_patch_triangles.push_back(pair.triangleA_index);
+    } else {
+      ellipsoid_patch_triangles.push_back(pair.triangleA_index);
+    }
+
+    if (pair.meshB_index == sphere->mesh_index) {
+      sphere_patch_triangles.push_back(pair.triangleB_index);
+    } else {
+      ellipsoid_patch_triangles.push_back(pair.triangleB_index);
+    }
+  }
+
+  for (auto sphere_triangle : sphere_patch_triangles) {
+    PRINT_VAR(sphere_triangle);
+  }
+
+  for (auto ellipsoid_triangle : ellipsoid_patch_triangles) {
+    PRINT_VAR(ellipsoid_triangle);
   }
 
   return 0;

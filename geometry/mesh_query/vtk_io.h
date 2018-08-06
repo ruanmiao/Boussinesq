@@ -16,31 +16,6 @@ namespace drake {
 namespace geometry {
 namespace mesh_query {
 
-void OutputMeshToOBJ(
-    const std::string& file_name,
-    const std::vector<Vector3<double>>& points,
-    const std::vector<Vector3<int>>& triangles) {
-  const int num_nodes = points.size();
-  const int num_tris = triangles.size();
-
-  std::ofstream file(file_name);
-
-  for (int i_node = 0; i_node < num_nodes; i_node++) {
-    const Vector3<double> pos = points[i_node];
-    file << "v " << pos[0] << " " << pos[1]
-         << " " << pos[2] << std::endl;
-  }
-
-  file << std::endl;
-  for (int i_tri = 0; i_tri < num_tris; i_tri++) {
-    const Vector3<int> tri = triangles[i_tri];
-    file << "f " << tri[0] + 1 << " " << tri[1] + 1
-         << " " << tri[2] + 1 << std::endl;
-  }
-  file.close();
-}
-
-
 void OutputMeshToVTK(
     std::ofstream& file,
     const std::vector<Vector3<double>>& points_G,

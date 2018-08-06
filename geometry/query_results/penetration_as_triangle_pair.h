@@ -68,7 +68,9 @@ struct PenetrationAsTrianglePair {
 
   /** A reference to the triangle on A on which As lies. Its lifespan is that
   of the underlying mesh. */
-  int triangle_A;
+  int triangleA_index;
+
+  Vector3<int> triangleA;
 
   /** Position vector for a point Aₛ on the surface of A measured and expressed
    in the world frame. */
@@ -83,7 +85,9 @@ struct PenetrationAsTrianglePair {
   int meshB_index;
 
   /** A reference to the triangle of mesh B on which Bs lies.  */
-  int triangle_B;
+  int triangleB_index;
+
+  Vector3<int> triangleB;
 
   /** Position vector for a point Bₛ on the surface of B measured and expressed
   in the world frame. */

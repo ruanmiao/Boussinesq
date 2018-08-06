@@ -1,4 +1,5 @@
 #include "drake/geometry/mesh_query/mesh_query.h"
+#include "drake/multibody/shapes/geometry.h"
 
 #include <algorithm>
 #include <limits>
@@ -9,20 +10,6 @@
 namespace drake {
 namespace geometry {
 namespace mesh_query {
-
-double CalcTriangleArea(
-    const Vector3<double>& p_AP1,
-    const Vector3<double>& p_AP2,
-    const Vector3<double>& p_AP3) {
-  // The orientation of the normal follows the right-hand rule.
-  // It is expressed in the same frame in which the mesh points are expressed.
-  const Vector3<double> u1_A = p_AP2 - p_AP1;
-  const Vector3<double> u2_A = p_AP3 - p_AP1;
-  const Vector3<double> area_vector_A = u1_A.cross(u2_A);
-  // By dotting with the plane's normal we get the appropriate sign for the
-  // are.
-  return area_vector_A.norm() / 2.0;
-};
 
 // Tolerance used to test when the distance is close to zero. This number is
 // made sligthly larger than zero to avoid divission by zero when computing a
@@ -63,7 +50,8 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         //////////////////////////////////////////////////////////////////////////
 
         result.meshA_index = mesh1.mesh_index;
-        result.triangle_A = mesh1.node_element[node_index].first;
+        result.triangleA_index = mesh1.node_element[node_index].first;
+        result.triangleA = mesh1.triangles[result.triangleA_index];
         result.p_WoAs_W = p_WQ;
 
         //const Vector3<double> p_WP = point_mesh_result.p_FP;
@@ -85,7 +73,8 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         // MESH B INFO
         //////////////////////////////////////////////////////////////////////////
         result.meshB_index = mesh2.mesh_index;
-        result.triangle_B = point_mesh_result.triangle_index;
+        result.triangleB_index = point_mesh_result.triangle_index;
+        result.triangleB = mesh2.triangles[result.triangleB_index];
         result.p_WoBs_W = point_mesh_result.p_FP;
         result.barycentric_B = point_mesh_result.barycentric_P;
         // Frame F IS the world frame W on output from
@@ -109,78 +98,163 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
   return pairs;
 }
 
-std::vector<Vector3<double>> CalcAreaWeightedNormals(
-    const Mesh<double>& mesh) {
-  const auto& points_F = mesh.points_G;
-  const auto& triangles = mesh.triangles;
-  const auto& face_normals_F = mesh.face_normals_G;
+std::pair<std::unique_ptr<Mesh<double>>, std::unique_ptr<Mesh<double>>>
+MakeLocalPatchMeshes(
+    std::vector<PenetrationAsTrianglePair<double>>* pairs,
+    const Mesh<double>& meshA, const Mesh<double>& meshB) {
+  auto meshA_patch = std::make_unique<Mesh<double>>();
+  auto meshB_patch = std::make_unique<Mesh<double>>();
 
-  const int num_nodes = points_F.size();
-  const int num_triangles = triangles.size();
+  meshA_patch->mesh_index = meshA.mesh_index;
+  meshB_patch->mesh_index = meshB.mesh_index;
 
-  // Ensure normals were already computed.
-  DRAKE_DEMAND(static_cast<int>(face_normals_F.size()) == num_triangles);
+  std::set<int> patchA_triangles;
+  std::set<int> patchB_triangles;
 
-  // Compute the area for each triangle in the mesh.
-  VectorX<double> triangle_area(num_triangles);
-  for (int ie = 0; ie < num_triangles; ++ie) {
-    const auto& triangle = triangles[ie];
-    const Vector3<double>& p_FP1 = points_F[triangle[0]];
-    const Vector3<double>& p_FP2 = points_F[triangle[1]];
-    const Vector3<double>& p_FP3 = points_F[triangle[2]];
-    triangle_area[ie] = CalcTriangleArea(p_FP1, p_FP2, p_FP3);
-  }
+  std::set<int> patchA_nodes;
+  std::set<int> patchB_nodes;
 
-  // Compute a version of "lumped" mass matrix by simply adding the area of
-  // all triangles adjacent to a node.
-  VectorX<double> node_area = VectorX<double>::Zero(num_nodes);
-  std::vector<Vector3<double>> rhs(num_nodes, Vector3<double>::Zero());
-  for (int triangle_index = 0;
-       triangle_index < num_triangles; ++triangle_index) {
-    const auto& triangle = triangles[triangle_index];
-    const double area = triangle_area[triangle_index];
-    for (int local_index = 0; local_index < 3; ++local_index) {
-      int node_index = triangle[local_index];
-      node_area[node_index] += area;
-      rhs[node_index] += face_normals_F[triangle_index] * area;
+  auto InsertTriangle = [](
+      int triangle_index, const Vector3<int>& triangle,
+      std::set<int>* patch_triangles,
+      std::set<int>* patch_nodes) {
+    patch_triangles->insert(triangle_index);
+    for (int i = 0; i < 3; ++i) {
+      patch_nodes->insert(triangle[i]);
+    }
+  };
+
+  auto InsertNodeAndAdjacentTriangles = [InsertTriangle](
+      int node_index, const std::vector<int>& node_triangles,
+      const std::vector<Vector3<int>>& mesh_triangles,
+      std::set<int>* patch_triangles,
+      std::set<int>* patch_nodes) {
+    patch_nodes->insert(node_index);
+    for (int triangle_index : node_triangles) {
+      InsertTriangle(triangle_index, mesh_triangles[triangle_index],
+                     patch_triangles, patch_nodes);
+    }
+  };
+
+  auto InsertTriangleAndAdjacentTriangles = [InsertNodeAndAdjacentTriangles](
+      int triangle_index, const Vector3<int>& triangle,
+      const std::vector<Vector3<int>>& mesh_triangles,
+      const std::vector<std::vector<int>>& nodes_triangles,
+      std::set<int>* patch_triangles,
+      std::set<int>* patch_nodes) {
+    patch_triangles->insert(triangle_index);
+
+    for (int i = 0; i < 3; ++i) {
+      const int node_index = triangle[i];
+      const auto& node_triangles = nodes_triangles[node_index];
+      InsertNodeAndAdjacentTriangles(
+          node_index, node_triangles, mesh_triangles,
+          patch_triangles, patch_nodes);
+    }
+  };
+
+  // Crete the set of triangles in the patch for each mesh.
+  // 1) First add the triangles directly referenced by th query pairs.
+  for (const auto& pair : *pairs) {
+    int triangle_index = pair.triangleA_index;
+    if (pair.meshA_index == meshA.mesh_index ) {
+      const auto& triangle = meshA.triangles[triangle_index];
+      InsertTriangleAndAdjacentTriangles(
+          triangle_index, triangle,
+          meshA.triangles, meshA.node_triangles,
+          &patchA_triangles, &patchA_nodes);
+    } else {
+      const auto& triangle = meshB.triangles[triangle_index];
+      InsertTriangleAndAdjacentTriangles(
+          triangle_index, triangle,
+          meshB.triangles, meshB.node_triangles,
+          &patchB_triangles, &patchB_nodes);
+    }
+
+    triangle_index = pair.triangleB_index;
+    if (pair.meshB_index == meshA.mesh_index) {
+      const auto& triangle = meshA.triangles[triangle_index];
+      InsertTriangleAndAdjacentTriangles(
+          triangle_index, triangle,
+          meshA.triangles, meshA.node_triangles,
+                     &patchA_triangles, &patchA_nodes);
+    } else {
+      const auto& triangle = meshB.triangles[triangle_index];
+      InsertTriangleAndAdjacentTriangles(
+          triangle_index, triangle,
+          meshB.triangles, meshB.node_triangles,
+          &patchB_triangles, &patchB_nodes);
     }
   }
 
-  std::vector<Vector3<double>> node_normals_F(num_nodes);
-  for (int node_index = 0;  node_index < num_nodes; ++node_index) {
-    node_normals_F[node_index] = rhs[node_index] / node_area[node_index];
-    node_normals_F[node_index].normalize();
+  auto ConvertPatchSetsToMesh = [](
+      const std::set<int>& patch_nodes,
+      const std::set<int>& patch_triangles,
+      const Mesh<double>& mesh,
+      Mesh<double>* patch_mesh) {
+    std::vector<int> triangles_map(mesh.triangles.size(), -1);
+
+    std::vector<int> nodes_map(mesh.points_G.size(), -1);
+    for (int node_index : patch_nodes) {
+      // Define the local patch index to node_index
+      nodes_map[node_index] = patch_mesh->points_G.size();
+      patch_mesh->points_G.push_back(mesh.points_G[node_index]);
+    }
+
+    for (int triangle_index : patch_triangles) {
+      const auto& triangle = mesh.triangles[triangle_index];
+
+      DRAKE_DEMAND(nodes_map[triangle[0]] >= 0);
+      DRAKE_DEMAND(nodes_map[triangle[1]] >= 0);
+      DRAKE_DEMAND(nodes_map[triangle[2]] >= 0);
+
+      const Vector3<int> pach_triangle(
+          nodes_map[triangle[0]],
+          nodes_map[triangle[1]],
+          nodes_map[triangle[2]]);
+
+      triangles_map[triangle_index] = patch_mesh->triangles.size();
+      patch_mesh->triangles.push_back(pach_triangle);
+    }
+
+    return triangles_map;
+  };
+
+  auto patchA_triangles_map =
+      ConvertPatchSetsToMesh(patchA_nodes, patchA_triangles, meshA,
+                         meshA_patch.get());
+
+  auto patchB_triangles_map =
+      ConvertPatchSetsToMesh(patchB_nodes, patchB_triangles, meshB,
+                         meshB_patch.get());
+
+  for (auto& pair : *pairs) {
+    pair.triangleA_index = pair.meshA_index == meshA.mesh_index ?
+                      patchA_triangles_map.at(pair.triangleA_index) :
+                      patchB_triangles_map.at(pair.triangleA_index);
+    DRAKE_DEMAND(pair.triangleA_index >= 0);
+
+    if (pair.meshA_index == meshA.mesh_index) {
+      pair.triangleA = meshA_patch->triangles[pair.triangleA_index];
+    } else {
+      pair.triangleA = meshB_patch->triangles[pair.triangleA_index];
+    }
+
+    pair.triangleB_index = pair.meshB_index == meshA.mesh_index ?
+                      patchA_triangles_map.at(pair.triangleB_index) :
+                      patchB_triangles_map.at(pair.triangleB_index);
+
+    if (pair.meshB_index == meshA.mesh_index) {
+      pair.triangleB = meshA_patch->triangles[pair.triangleB_index];
+    } else {
+      pair.triangleB = meshB_patch->triangles[pair.triangleB_index];
+    }
+
+    DRAKE_DEMAND(pair.triangleB_index >= 0);
   }
-  return node_normals_F;
-}
 
-std::vector<Vector3<double>> CalcMeshFaceNormals(
-    const std::vector<Vector3<double>>& points_A,
-    const std::vector<Vector3<int>>& triangles) {
-  const int num_triangles = triangles.size();
-
-  std::vector<Vector3<double>> normals;
-  normals.reserve(num_triangles);
-
-  for (int triangle_index = 0;
-       triangle_index < num_triangles; ++triangle_index) {
-    const Vector3<int>& triangle = triangles[triangle_index];
-
-    const Vector3<double>& p_AP1 = points_A[triangle[0]];
-    const Vector3<double>& p_AP2 = points_A[triangle[1]];
-    const Vector3<double>& p_AP3 = points_A[triangle[2]];
-
-    // The orientation of the normal follows the right-hand rule.
-    // It is expressed in the same frame in which the mesh points are expressed.
-    const Vector3<double> u1_A = p_AP2 - p_AP1;
-    const Vector3<double> u2_A = p_AP3 - p_AP1;
-    const Vector3<double> normal_A = u1_A.cross(u2_A);
-
-    normals.push_back(normal_A.normalized());
-  }
-
-  return normals;
-}
+  return std::make_pair(std::move(meshA_patch), std::move(meshB_patch));
+};
 
 bool CalcPointToMeshNegativeDistance(
     const Isometry3<double>& X_FA,
