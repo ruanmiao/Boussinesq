@@ -7,9 +7,25 @@
 #include <utility>
 #include <vector>
 
+
+#include <iostream>
+#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
+
 namespace drake {
 namespace geometry {
 namespace mesh_query {
+
+Vector3<double> CalcClosestPointOnTriangle(
+    const Vector3<double>& p,
+    const Vector3<double>& a,
+    const Vector3<double>& b,
+    const Vector3<double>& c);
+
+Vector3<double> CalcClosestPointOnTriangleBarycentricCoordinates(
+    const Vector3<double>& p,
+    const Vector3<double>& a,
+    const Vector3<double>& b,
+    const Vector3<double>& c);
 
 // Tolerance used to test when the distance is close to zero. This number is
 // made sligthly larger than zero to avoid divission by zero when computing a
@@ -20,12 +36,13 @@ const double kNearSurfaceTolerance = 10 *
 
 std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
     const Isometry3<double>& X_WA, const Mesh<double>& meshA,
-    const Isometry3<double>& X_WB, const Mesh<double>& meshB) {
+    const Isometry3<double>& X_WB, const Mesh<double>& meshB,
+    double sigma) {
   std::vector<PenetrationAsTrianglePair<double>> pairs;
 
   pairs.clear();
 
-  auto Mesh1NodesVsMesh2Surface = [&pairs](
+  auto Mesh1NodesVsMesh2Surface = [&pairs, sigma](
       const Isometry3<double>& X_WM1, const Mesh<double>& mesh1,
       const Isometry3<double>& X_WM2, const Mesh<double>& mesh2) {
     for (size_t node_index = 0; node_index < mesh1.points_G.size(); ++node_index) {
@@ -40,7 +57,17 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
           p_WQ,
           &point_mesh_result);
 
-      if (is_inside) {
+      if (!is_inside) {
+        CalcPointToMeshPositiveDistance(
+            X_WM2, mesh2.points_G, mesh2.triangles,
+            mesh2.face_normals_G, mesh2.node_normals_G,
+            p_WQ,
+            &point_mesh_result);
+      }
+
+      bool is_inside_sigma = point_mesh_result.distance < sigma;
+
+      if (is_inside_sigma) {
         PenetrationAsTrianglePair<double> result;
 
         result.signed_distance = point_mesh_result.distance;
@@ -55,10 +82,10 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         result.p_WoAs_W = p_WQ;
 
         //const Vector3<double> p_WP = point_mesh_result.p_FP;
-        const double distance = point_mesh_result.distance;
+        //const double distance = point_mesh_result.distance;
 
         // For now we are assuming the distance is zero. Therefore verify this.
-        DRAKE_DEMAND(distance <= -kNearSurfaceTolerance);
+        //DRAKE_DEMAND(distance <= -kNearSurfaceTolerance);
 
         // Frame G is the frame of the mesh1. Therefore we must transform to
         // the world frame.
@@ -123,7 +150,7 @@ MakeLocalPatchMeshes(
       patch_nodes->insert(triangle[i]);
     }
   };
-
+#if 0
   auto InsertNodeAndAdjacentTriangles = [InsertTriangle](
       int node_index, const std::vector<int>& node_triangles,
       const std::vector<Vector3<int>>& mesh_triangles,
@@ -152,37 +179,33 @@ MakeLocalPatchMeshes(
           patch_triangles, patch_nodes);
     }
   };
-
+#endif
   // Crete the set of triangles in the patch for each mesh.
   // 1) First add the triangles directly referenced by th query pairs.
   for (const auto& pair : *pairs) {
     int triangle_index = pair.triangleA_index;
     if (pair.meshA_index == meshA.mesh_index ) {
       const auto& triangle = meshA.triangles[triangle_index];
-      InsertTriangleAndAdjacentTriangles(
+      InsertTriangle(
           triangle_index, triangle,
-          meshA.triangles, meshA.node_triangles,
           &patchA_triangles, &patchA_nodes);
     } else {
       const auto& triangle = meshB.triangles[triangle_index];
-      InsertTriangleAndAdjacentTriangles(
+      InsertTriangle(
           triangle_index, triangle,
-          meshB.triangles, meshB.node_triangles,
           &patchB_triangles, &patchB_nodes);
     }
 
     triangle_index = pair.triangleB_index;
     if (pair.meshB_index == meshA.mesh_index) {
       const auto& triangle = meshA.triangles[triangle_index];
-      InsertTriangleAndAdjacentTriangles(
+      InsertTriangle(
           triangle_index, triangle,
-          meshA.triangles, meshA.node_triangles,
                      &patchA_triangles, &patchA_nodes);
     } else {
       const auto& triangle = meshB.triangles[triangle_index];
-      InsertTriangleAndAdjacentTriangles(
+      InsertTriangle(
           triangle_index, triangle,
-          meshB.triangles, meshB.node_triangles,
           &patchB_triangles, &patchB_nodes);
     }
   }
@@ -256,6 +279,89 @@ MakeLocalPatchMeshes(
   return std::make_pair(std::move(meshA_patch), std::move(meshB_patch));
 };
 
+void CalcPointToMeshPositiveDistance(
+    const Isometry3<double>& X_FA,
+    const std::vector<Vector3<double>>& points_A,
+    const std::vector<Vector3<int>>& triangles,
+    const std::vector<Vector3<double>>& face_normals_A,
+    const std::vector<Vector3<double>>& node_normals_A,
+    const Vector3<double>& p_FQ,
+    PointMeshDistance<double>* point_mesh_distance_ptr) {
+  using std::abs;
+  using std::min;
+
+  const int num_nodes = points_A.size();
+  const int num_elements = triangles.size();
+  DRAKE_DEMAND(static_cast<int>(face_normals_A.size()) == num_elements);
+  DRAKE_DEMAND(static_cast<int>(node_normals_A.size()) == num_nodes);
+
+  // Point Q measured and expressed in the mesh frame A.
+  const Vector3<double> p_AQ = X_FA.inverse() * p_FQ;
+
+  double min_distance2 = std::numeric_limits<double>::infinity();
+  int min_distance_triangle = -1;
+  Vector3<double> min_dist_barycentric;
+  Vector3<double> min_dist_p_AP;
+
+  // "Brute force" scans all triangles and computes the distance to each.
+  for (size_t triangle_index = 0;
+       triangle_index < triangles.size(); ++triangle_index) {
+    const Vector3<int>& triangle = triangles[triangle_index];
+
+    const Vector3<double>& p_AP1 = points_A[triangle[0]];
+    const Vector3<double>& p_AP2 = points_A[triangle[1]];
+    const Vector3<double>& p_AP3 = points_A[triangle[2]];
+
+    const Vector3<double> barycentric_P =
+        CalcClosestPointOnTriangleBarycentricCoordinates(p_AQ, p_AP1, p_AP2, p_AP3);
+
+    const Vector3<double> p_AP =
+        barycentric_P[0] * p_AP1 +
+        barycentric_P[1] * p_AP2 +
+        barycentric_P[2] * p_AP3;
+
+    DRAKE_DEMAND(barycentric_P[0] >=0);
+    DRAKE_DEMAND(barycentric_P[1] >=0);
+    DRAKE_DEMAND(barycentric_P[2] >=0);
+    //PRINT_VAR(barycentric_P[0]+barycentric_P[1]+barycentric_P[2]);
+    DRAKE_DEMAND(std::abs(barycentric_P[0]+barycentric_P[1]+barycentric_P[2] - 1.0) < 5e-15);
+
+
+
+    const double distance2 = (p_AP-p_AQ).squaredNorm();
+
+    if (distance2 < min_distance2) {
+      min_distance2 = distance2;
+      min_distance_triangle = triangle_index;
+      min_dist_barycentric = barycentric_P;
+      min_dist_p_AP = p_AP;
+    }
+  }
+
+  // Triangle indexes.
+  const Vector3<int>& triangle = triangles[min_distance_triangle];
+
+  // Interpolate normal to point on P on the mesh.
+  const Vector3<double>& normal_P1_A = node_normals_A[triangle[0]];
+  const Vector3<double>& normal_P2_A = node_normals_A[triangle[1]];
+  const Vector3<double>& normal_P3_A = node_normals_A[triangle[2]];
+
+  const Vector3<double> normal_A =
+      min_dist_barycentric[0] * normal_P1_A +
+      min_dist_barycentric[1] * normal_P2_A +
+      min_dist_barycentric[2] * normal_P3_A;
+
+  PointMeshDistance<double>& point_mesh_distance = *point_mesh_distance_ptr;
+
+  point_mesh_distance.triangle_index = min_distance_triangle;
+  point_mesh_distance.distance = sqrt(min_distance2);
+  point_mesh_distance.p_FP = X_FA * min_dist_p_AP;
+  point_mesh_distance.normal_F = X_FA.linear() * normal_A;
+  point_mesh_distance.triangle = triangle;
+  point_mesh_distance.barycentric_P = min_dist_barycentric;
+}
+
+// Returns true if the point is inside the convex mesh.
 bool CalcPointToMeshNegativeDistance(
     const Isometry3<double>& X_FA,
     const std::vector<Vector3<double>>& points_A,
@@ -471,6 +577,68 @@ Vector3<double> CalcClosestPointOnTriangle(
   const double v = vb/(va+vb+vc);
   const double w = 1.0 - u - v;  // = vc//(va+vb+vc).
   return u * a + v * b + w * c;
+}
+
+Vector3<double> CalcClosestPointOnTriangleBarycentricCoordinates(
+    const Vector3<double>& p,
+    const Vector3<double>& a,
+    const Vector3<double>& b,
+    const Vector3<double>& c) {
+  const Vector3<double> ab = b - a;
+  const Vector3<double> ac = c - a;
+  const Vector3<double> bc = c - b;
+
+  // Compute parametric position s for projetion P' of P on AB,
+  // P' = A + s*AB, s = snom/(snom+sdenom).
+  const double snom = ab.dot(p-a);
+  const double sdenom = (p-b).dot(a-b);
+
+  // Compute parametric position t for projection P' of P on AC,
+  // P' = A + t*AC, s = tnom/(tnom+tdenom).
+  const double tnom = ac.dot(p-a);
+  const double tdenom = (p-c).dot(a-c);
+
+  if (snom <= 0.0 && tnom <= 0.0) return Vector3<double>(1.0, 0.0, 0.0);  // Vertex region early out.
+
+  // Compute parametric position u for projection P' of P on BC,
+  // P' = B + u*BC, u = unom/(unom+udenom).
+  const double unom = bc.dot(p-b);
+  const double udenom = (p-c).dot(b-c);
+
+  if (sdenom <= 0.0 && unom <= 0.0) return Vector3<double>(0.0, 1.0, 0.0);    // Vertex region early out.
+  if (tdenom <= 0.0 && udenom <= 0.0) return Vector3<double>(0.0, 0.0, 1.0);  // Vertex region early out.
+
+  // P is outside (or on) AB if the triple product [N PA PB] <= 0.
+  const Vector3<double> n = (b-a).cross(c-a);
+  const double vc = n.dot((a-p).cross(b-p));
+
+  // If P is outside AB and within feature region of AB, return the projection
+  // of P onto AB.
+  if (vc <= 0.0 && snom >= 0.0 && sdenom >= 0.0)
+    return Vector3<double>(sdenom/(snom+sdenom), snom/(snom+sdenom), 0.0);
+
+  // P is outside (or on) BC if the triple product [N PB PC] <= 0.
+  const double va = n.dot((b-p).cross(c-p));
+
+  // If P is outside BC and within feature region of BC,
+  // return projection of P onto BC.
+  if (va <= 0.0 && unom >= 0.0 && udenom >= 0.0)
+    return Vector3<double>(0.0, udenom/(unom+udenom), unom/(unom+udenom));
+
+  // P is outside (or on) CA if the triple product [N PC PA] <= 0.
+  const double vb = n.dot((c-p).cross(a-p));
+
+  // If P is outside CA and within feature region of CA, return the projection
+  // of P onto CA.
+  if (vb <= 0 && tnom >= 0.0 && tdenom >= 0.0)
+    return Vector3<double>(tnom/(tnom+tdenom), 0.0, tdenom/(tnom+tdenom));
+
+  // P must project inside the face region. Compute Q using barycentric
+  // coordinates.
+  const double u = va/(va+vb+vc);
+  const double v = vb/(va+vb+vc);
+  const double w = 1.0 - u - v;  // = vc//(va+vb+vc).
+  return Vector3<double>(u, v, w);
 }
 
 }  // namespace mesh_query

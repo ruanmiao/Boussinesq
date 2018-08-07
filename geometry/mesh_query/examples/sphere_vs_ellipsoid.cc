@@ -38,8 +38,9 @@ int DoMain() {
   FlipNormals(ellipsoid.get());
 
   const double radius = 1.0;
-  const double penetration = 0.05;
+  const double penetration = 0.0;
   const double z_WSo = radius - penetration;
+  const double sigma = 0.1;
 
   // Place sphere a "penetration" distance below z = 0.
   // Apply an arbirary rotation for testing.
@@ -75,7 +76,7 @@ int DoMain() {
   // full meshes.
   std::vector<PenetrationAsTrianglePair<double>> results = MeshToMeshQuery(
       X_WEllipsoid, *ellipsoid,
-      X_WSphere, *sphere);
+      X_WSphere, *sphere, sigma);
 
   // This call creates the two patches on each mesh and updates "results" so
   // that the triangle indexes in each pair are "local indexes" to the patch
