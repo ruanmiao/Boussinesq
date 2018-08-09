@@ -150,7 +150,7 @@ MakeLocalPatchMeshes(
       patch_nodes->insert(triangle[i]);
     }
   };
-#if 0
+
   auto InsertNodeAndAdjacentTriangles = [InsertTriangle](
       int node_index, const std::vector<int>& node_triangles,
       const std::vector<Vector3<int>>& mesh_triangles,
@@ -179,33 +179,37 @@ MakeLocalPatchMeshes(
           patch_triangles, patch_nodes);
     }
   };
-#endif
+
   // Crete the set of triangles in the patch for each mesh.
   // 1) First add the triangles directly referenced by th query pairs.
   for (const auto& pair : *pairs) {
     int triangle_index = pair.triangleA_index;
     if (pair.meshA_index == meshA.mesh_index ) {
       const auto& triangle = meshA.triangles[triangle_index];
-      InsertTriangle(
+      InsertTriangleAndAdjacentTriangles(
           triangle_index, triangle,
+          meshA.triangles, meshA.node_triangles,
           &patchA_triangles, &patchA_nodes);
     } else {
       const auto& triangle = meshB.triangles[triangle_index];
-      InsertTriangle(
+      InsertTriangleAndAdjacentTriangles(
           triangle_index, triangle,
+          meshB.triangles, meshB.node_triangles,
           &patchB_triangles, &patchB_nodes);
     }
 
     triangle_index = pair.triangleB_index;
     if (pair.meshB_index == meshA.mesh_index) {
       const auto& triangle = meshA.triangles[triangle_index];
-      InsertTriangle(
+      InsertTriangleAndAdjacentTriangles(
           triangle_index, triangle,
-                     &patchA_triangles, &patchA_nodes);
+          meshA.triangles, meshA.node_triangles,
+          &patchA_triangles, &patchA_nodes);
     } else {
       const auto& triangle = meshB.triangles[triangle_index];
-      InsertTriangle(
+      InsertTriangleAndAdjacentTriangles(
           triangle_index, triangle,
+          meshB.triangles, meshB.node_triangles,
           &patchB_triangles, &patchB_nodes);
     }
   }
@@ -232,9 +236,9 @@ MakeLocalPatchMeshes(
       DRAKE_DEMAND(nodes_map[triangle[2]] >= 0);
 
       const Vector3<int> pach_triangle(
-          nodes_map[triangle[0]],
-          nodes_map[triangle[1]],
-          nodes_map[triangle[2]]);
+          nodes_map.at(triangle[0]),
+          nodes_map.at(triangle[1]),
+          nodes_map.at(triangle[2]));
 
       triangles_map[triangle_index] = patch_mesh->triangles.size();
       patch_mesh->triangles.push_back(pach_triangle);
@@ -251,6 +255,8 @@ MakeLocalPatchMeshes(
       ConvertPatchSetsToMesh(patchB_nodes, patchB_triangles, meshB,
                          meshB_patch.get());
 
+  // Convert indexes from the global indexing in the original meshes to local
+  // patch indexing.
   for (auto& pair : *pairs) {
     pair.triangleA_index = pair.meshA_index == meshA.mesh_index ?
                       patchA_triangles_map.at(pair.triangleA_index) :

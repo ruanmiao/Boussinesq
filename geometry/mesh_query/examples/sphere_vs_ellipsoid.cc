@@ -16,6 +16,12 @@ namespace geometry {
 namespace mesh_query {
 namespace {
 
+DEFINE_double(penetration, 0.1,
+              "Distance between sphere and ellipsoid. It can be negative (they are separated.)");
+
+DEFINE_double(sigma, 0.1,
+              "Queries with distance below sigma are included, including negative distance results.");
+
 using Eigen::AngleAxisd;
 using Eigen::Translation3d;
 using Eigen::Isometry3d;
@@ -36,9 +42,9 @@ int DoMain() {
   ellipsoid->mesh_index = 1;
 
   const double radius = 1.0;
-  const double penetration = 0.0;
+  const double penetration = FLAGS_penetration;
   const double z_WSo = radius - penetration;
-  const double sigma = 0.1;
+  const double sigma = FLAGS_sigma;
 
   // Place sphere a "penetration" distance below z = 0.
   // Apply an arbirary rotation for testing.
