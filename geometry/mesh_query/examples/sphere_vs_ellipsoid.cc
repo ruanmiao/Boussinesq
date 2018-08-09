@@ -22,20 +22,18 @@ using Eigen::Isometry3d;
 using Eigen::Vector3d;
 
 int DoMain() {
+
+  const bool flip_normals = true;
+
   // Load mesh for a sphere.
   std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
-      "drake/geometry/mesh_query/examples/sphere.obj");
+      "drake/geometry/mesh_query/examples/sphere.obj", flip_normals);
   sphere->mesh_index = 0;
 
   // Load mesh for an ellipsoid.
   std::unique_ptr<Mesh<double>> ellipsoid = LoadMeshFromObj(
-      "drake/geometry/mesh_query/examples/ellipsoid.obj");
+      "drake/geometry/mesh_query/examples/ellipsoid.obj", flip_normals);
   ellipsoid->mesh_index = 1;
-
-  // For this example normals in the obj point inward and therefore we flip
-  // them.
-  FlipNormals(sphere.get());
-  FlipNormals(ellipsoid.get());
 
   const double radius = 1.0;
   const double penetration = 0.0;

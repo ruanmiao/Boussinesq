@@ -33,7 +33,7 @@ double CalcTriangleArea(
 };
 
 std::unique_ptr<Mesh<double>> LoadMeshFromObj(
-    const std::string& file_name) {
+    const std::string& file_name, bool flip_normals) {
   const auto resource_name = FindResourceOrThrow(file_name);
   DrakeShapes::Mesh mesh_loader(resource_name, resource_name);
 
@@ -43,6 +43,10 @@ std::unique_ptr<Mesh<double>> LoadMeshFromObj(
   // Compute normals.
   mesh->face_normals_G = CalcMeshFaceNormals(mesh->points_G, mesh->triangles);
   mesh->node_normals_G = CalcAreaWeightedNormals(*mesh);
+
+  // Flipping normals changes the indexing. There we MUST flip normals BEFORE
+  // computing Mesh::node_element.
+  if (flip_normals) FlipNormals(mesh.get());
 
   const int num_points = mesh->points_G.size();
   // Allocate and initialize to invalid index values.
