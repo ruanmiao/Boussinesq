@@ -10,7 +10,12 @@ namespace multibody {
 namespace boussinesq_solver {
 
 Eigen::MatrixXd CalcJacobianHMatrix(
-    std::vector<drake::geometry::PenetrationAsTrianglePair<double>>);
+    const std::vector<drake::geometry::PenetrationAsTrianglePair<double>>&
+    queries,
+    const std::vector<Vector3<double>>& patch_A,
+    const std::vector<Vector3<double>>& patch_B,
+    int patch_A_index,
+    int patch_B_index);
 
 
 }  // namespace boussinesq_solver

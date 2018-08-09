@@ -146,6 +146,36 @@ drake_cc_library(
     ],
 )
 
+filegroup(
+    name = "test_objs",
+    testonly = 1,
+    srcs = [
+        "test/ellipsoid.obj",
+        "test/plane.obj",
+        "test/sphere.obj",
+    ],
+)
+
+drake_cc_googletest(
+    name = "jacobian_H_matrix_test",
+    srcs = ["test/jacobian_H_matrix_test.cc"],
+    data = [
+        ":test_objs",
+    ],
+    deps = [
+        ":compliance_matrix",
+        ":jacobian_H_matrix",
+        ":test_helper",
+        "//common:find_resource",
+        "//common/test_utilities:eigen_matrix_compare",
+        "//geometry/mesh_query",
+        "//geometry/mesh_query:vtk_io",
+        "//multibody/shapes",
+        "//solvers:moby_lcp_solver",
+        "@gflags",
+    ],
+)
+
 drake_cc_googletest(
     name = "compliance_matrix_test",
     deps = [

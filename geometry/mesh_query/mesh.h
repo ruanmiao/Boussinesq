@@ -64,7 +64,8 @@ void OutputMeshToOBJ(
     const std::vector<Vector3<double>>& points,
     const std::vector<Vector3<int>>& triangles);
 
-std::unique_ptr<Mesh<double>> LoadMeshFromObj(const std::string& file_name);
+std::unique_ptr<Mesh<double>> LoadMeshFromObj(
+    const std::string& file_name, bool flip_normals);
 
 }  // namespace mesh_query
 }  // namespace geometry

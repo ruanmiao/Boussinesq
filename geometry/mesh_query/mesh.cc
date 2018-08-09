@@ -14,6 +14,10 @@
 #include "drake/common/find_resource.h"
 #include "drake/multibody/shapes/geometry.h"
 
+#include <iostream>
+#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
+
+
 namespace drake {
 namespace geometry {
 namespace mesh_query {
@@ -33,7 +37,7 @@ double CalcTriangleArea(
 };
 
 std::unique_ptr<Mesh<double>> LoadMeshFromObj(
-    const std::string& file_name) {
+    const std::string& file_name, bool flip_normals) {
   const auto resource_name = FindResourceOrThrow(file_name);
   DrakeShapes::Mesh mesh_loader(resource_name, resource_name);
 
@@ -44,9 +48,15 @@ std::unique_ptr<Mesh<double>> LoadMeshFromObj(
   mesh->face_normals_G = CalcMeshFaceNormals(mesh->points_G, mesh->triangles);
   mesh->node_normals_G = CalcAreaWeightedNormals(*mesh);
 
+  // Flip normals BEFORE we compute Mesh::node_element so that indexes were
+  // already updated.
+  if (flip_normals) FlipNormals(mesh.get());
+
   const int num_points = mesh->points_G.size();
   // Allocate and initialize to invalid index values.
   mesh->node_element.resize(num_points, std::make_pair(-1, -1));
+
+  PRINT_VAR(file_name);
 
   // Arbitrarily fill in mesh->node_element.
   const int num_elements = mesh->triangles.size();
@@ -54,10 +64,25 @@ std::unique_ptr<Mesh<double>> LoadMeshFromObj(
     const auto& triangle = mesh->triangles[element_index];
     for (int i = 0; i < 3; ++i) {
       const int node_index = triangle[i];
+
+      if (node_index==34) {
+        PRINT_VAR(element_index);
+        PRINT_VAR(i);
+        PRINT_VAR(triangle.transpose());
+        PRINT_VAR(mesh->node_element[node_index].first);
+        PRINT_VAR(mesh->node_element[node_index].second);
+      }
+
       if (mesh->node_element[node_index].first < 0) {  // not yet initialized.
         mesh->node_element[node_index].first = element_index;
         mesh->node_element[node_index].second = i;
       }
+
+      if (node_index==34) {
+        PRINT_VAR(mesh->node_element[node_index].first);
+        PRINT_VAR(mesh->node_element[node_index].second);
+      }
+
     }
   }
 

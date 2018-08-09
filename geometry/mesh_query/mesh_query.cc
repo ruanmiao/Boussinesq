@@ -7,6 +7,10 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
+
+
 namespace drake {
 namespace geometry {
 namespace mesh_query {
@@ -69,6 +73,18 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         result.barycentric_A =
             Vector3<double>::Unit(mesh1.node_element[node_index].second);
 
+        if (result.triangleA_index==41) {
+          PRINT_VAR(node_index);
+          PRINT_VAR(result.triangleA_index);
+          PRINT_VAR(result.triangleA.transpose());
+          PRINT_VAR(p_AQ.transpose());
+          PRINT_VAR(p_WQ.transpose());
+
+          PRINT_VAR(mesh1.node_element[node_index].first);
+          PRINT_VAR(mesh1.node_element[node_index].second);
+
+        }
+
         //////////////////////////////////////////////////////////////////////////
         // MESH B INFO
         //////////////////////////////////////////////////////////////////////////
@@ -89,7 +105,7 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
 
   // Scan each node on Mesh A and perform a point-mesh distance query with
   // mesh B.
-  Mesh1NodesVsMesh2Surface(X_WA, meshA, X_WB, meshB);
+  //Mesh1NodesVsMesh2Surface(X_WA, meshA, X_WB, meshB);
 
   // Reverse roles of mesh A and B. Now scan each node on Mesh B and perform a
   // point-mesh distance query with mesh A.

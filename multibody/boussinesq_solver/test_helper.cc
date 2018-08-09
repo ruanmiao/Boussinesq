@@ -233,7 +233,6 @@ Eigen::VectorXd GetPressureIntegrandX(
     const Vector3<double> pos = points_in_mesh[i_node];
     pressures(i_node, 0) = pos(0);
   }
-  std::cout << "cout try !!!" << std::endl;
   return pressures;
 }
 
