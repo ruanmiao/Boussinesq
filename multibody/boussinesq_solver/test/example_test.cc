@@ -152,7 +152,7 @@ int DoShperePlaneModel() {
     PRINT_VAR(plane_triangle);
   }
 
-  
+
   // Test jacobian_H_matrix:
   const int num_queries = results.size();
   const int size_sphere = sphere_patch->points_G.size();
