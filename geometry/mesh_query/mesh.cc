@@ -36,6 +36,40 @@ double CalcTriangleArea(
   return area_vector_A.norm() / 2.0;
 };
 
+VectorX<double> CalcNodeAreas(const Mesh<double>& mesh) {
+  const auto& points_F = mesh.points_G;
+  const auto& triangles = mesh.triangles;
+
+  const int num_nodes = points_F.size();
+  const int num_triangles = triangles.size();
+
+  // Compute the area for each triangle in the mesh.
+  VectorX<double> triangle_area(num_triangles);
+  for (int ie = 0; ie < num_triangles; ++ie) {
+    const auto &triangle = triangles[ie];
+    const Vector3<double> &p_FP1 = points_F[triangle[0]];
+    const Vector3<double> &p_FP2 = points_F[triangle[1]];
+    const Vector3<double> &p_FP3 = points_F[triangle[2]];
+    triangle_area[ie] = CalcTriangleArea(p_FP1, p_FP2, p_FP3);
+  }
+
+  // Compute a version of "lumped" mass matrix by simply adding the area of
+  // all triangles adjacent to a node.
+  VectorX<double> node_area = VectorX<double>::Zero(num_nodes);
+  for (int triangle_index = 0;
+       triangle_index < num_triangles; ++triangle_index) {
+    const auto &triangle = triangles[triangle_index];
+    const double area = triangle_area[triangle_index];
+    for (int local_index = 0; local_index < 3; ++local_index) {
+      int node_index = triangle[local_index];
+      // TODO: Revisit this approximation.
+      node_area[node_index] += area / 3.0;
+    }
+  }
+
+  return node_area;
+}
+
 std::unique_ptr<Mesh<double>> LoadMeshFromObj(
     const std::string& file_name, bool flip_normals) {
   const auto resource_name = FindResourceOrThrow(file_name);
@@ -95,6 +129,8 @@ std::unique_ptr<Mesh<double>> LoadMeshFromObj(
       mesh->node_triangles[node_index].push_back(element_index);
     }
   }
+
+  mesh->node_areas = CalcNodeAreas(*mesh);
 
   return mesh;
 }

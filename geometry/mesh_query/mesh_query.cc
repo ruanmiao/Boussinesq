@@ -233,10 +233,13 @@ MakeLocalPatchMeshes(
     std::vector<int> triangles_map(mesh.triangles.size(), -1);
 
     std::vector<int> nodes_map(mesh.points_G.size(), -1);
+    patch_mesh->node_areas.resize(mesh.points_G.size());
     for (int node_index : patch_nodes) {
       // Define the local patch index to node_index
-      nodes_map[node_index] = patch_mesh->points_G.size();
+      const int local_node_index = patch_mesh->points_G.size();
+      nodes_map[node_index] = local_node_index;
       patch_mesh->points_G.push_back(mesh.points_G[node_index]);
+      patch_mesh->node_areas[local_node_index] = mesh.node_areas[node_index];
     }
 
     for (int triangle_index : patch_triangles) {

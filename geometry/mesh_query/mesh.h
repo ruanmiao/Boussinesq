@@ -32,6 +32,8 @@ struct Mesh {
 
   std::vector<Vector3<double>> node_normals_G;
 
+  VectorX<double> node_areas;
+
   // A conveniently pre-computed array such that for a node_index then
   // node_element[node_index].first is an element of which node_index is a
   // vertex.
