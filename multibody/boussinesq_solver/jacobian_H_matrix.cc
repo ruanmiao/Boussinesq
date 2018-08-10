@@ -2,7 +2,6 @@
 
 #include <limits>
 
-#include "drake/multibody/boussinesq_solver/compliance_matrix.h"
 #include "drake/multibody/shapes/geometry.h"
 #include "drake/common/drake_assert.h"
 

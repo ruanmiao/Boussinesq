@@ -20,33 +20,50 @@ drake_cc_package_library(
         ":integral_reference_triangle",
         ":jacobian_H_matrix",
         ":math_helper",
-        ":row_compliance_matrix",
+        ":objects_contact_model",
         ":test_helper",
+    ],
+)
+
+filegroup(
+    name = "test_objs",
+    testonly = 1,
+    srcs = [
+        "test/ellipsoid.obj",
+        "test/plane.obj",
+        "test/sphere.obj",
+    ],
+)
+
+drake_cc_library(
+    name = "objects_contact_model",
+    srcs = [
+        "objects_contact_model.cc",
+    ],
+    hdrs = [
+        "objects_contact_model.h",
+    ],
+    deps = [
+        ":jacobian_H_matrix",
+        ":compliance_matrix",
+        "//common:essential",
+        "//geometry/mesh_query",
+        "//multibody/multibody_tree/math",
+        "//solvers:moby_lcp_solver",
     ],
 )
 
 drake_cc_library(
     name = "jacobian_H_matrix",
     srcs = [
-        "compliance_matrix.cc",
-        "integral_general_triangle.cc",
-        "integral_reference_triangle.cc",
         "jacobian_H_matrix.cc",
-        "math_helper.cc",
-        "row_compliance_matrix.cc",
     ],
     hdrs = [
-        "compliance_matrix.h",
-        "integral_general_triangle.h",
-        "integral_reference_triangle.h",
         "jacobian_H_matrix.h",
-        "math_helper.h",
-        "row_compliance_matrix.h",
     ],
     deps = [
         "//common:essential",
         "//geometry/mesh_query",
-        "//multibody/shapes",
     ],
 )
 
@@ -54,38 +71,15 @@ drake_cc_library(
     name = "compliance_matrix",
     srcs = [
         "compliance_matrix.cc",
-        "integral_general_triangle.cc",
-        "integral_reference_triangle.cc",
-        "math_helper.cc",
         "row_compliance_matrix.cc",
     ],
     hdrs = [
         "compliance_matrix.h",
-        "integral_general_triangle.h",
-        "integral_reference_triangle.h",
-        "math_helper.h",
         "row_compliance_matrix.h",
     ],
     deps = [
-        "//common:essential",
-    ],
-)
-
-drake_cc_library(
-    name = "row_compliance_matrix",
-    srcs = [
-        "integral_general_triangle.cc",
-        "integral_reference_triangle.cc",
-        "math_helper.cc",
-        "row_compliance_matrix.cc",
-    ],
-    hdrs = [
-        "integral_general_triangle.h",
-        "integral_reference_triangle.h",
-        "math_helper.h",
-        "row_compliance_matrix.h",
-    ],
-    deps = [
+        ":integral_general_triangle",
+        ":integral_reference_triangle",
         "//common:essential",
     ],
 )
@@ -94,15 +88,13 @@ drake_cc_library(
     name = "integral_general_triangle",
     srcs = [
         "integral_general_triangle.cc",
-        "integral_reference_triangle.cc",
-        "math_helper.cc",
     ],
     hdrs = [
         "integral_general_triangle.h",
-        "integral_reference_triangle.h",
-        "math_helper.h",
     ],
     deps = [
+        ":integral_reference_triangle",
+        ":math_helper",
         "//common:essential",
     ],
 )
@@ -111,13 +103,12 @@ drake_cc_library(
     name = "integral_reference_triangle",
     srcs = [
         "integral_reference_triangle.cc",
-        "math_helper.cc",
     ],
     hdrs = [
         "integral_reference_triangle.h",
-        "math_helper.h",
     ],
     deps = [
+        ":math_helper",
         "//common:essential",
     ],
 )
@@ -146,16 +137,6 @@ drake_cc_library(
     ],
 )
 
-filegroup(
-    name = "test_objs",
-    testonly = 1,
-    srcs = [
-        "test/ellipsoid.obj",
-        "test/plane.obj",
-        "test/sphere.obj",
-    ],
-)
-
 drake_cc_googletest(
     name = "example_test",
     srcs = ["test/example_test.cc"],
@@ -165,6 +146,7 @@ drake_cc_googletest(
     deps = [
         ":compliance_matrix",
         ":jacobian_H_matrix",
+        ":objects_contact_model",
         ":test_helper",
         "//common:find_resource",
         "//common/test_utilities:eigen_matrix_compare",

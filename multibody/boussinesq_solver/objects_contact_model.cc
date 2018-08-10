@@ -5,9 +5,6 @@
 #include <iostream>
 #include <string>
 
-#include "drake/common/find_resource.h"
-#include "drake/multibody/shapes/geometry.h"
-#include "drake/multibody/multibody_tree/math/spatial_force.h"
 #include "drake/multibody/boussinesq_solver/jacobian_H_matrix.h"
 #include "drake/multibody/boussinesq_solver/compliance_matrix.h"
 #include "drake/solvers/moby_lcp_solver.h"
@@ -17,7 +14,6 @@
 namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
-namespace {
 
 using Eigen::AngleAxisd;
 using Eigen::Translation3d;
@@ -28,48 +24,15 @@ using geometry::mesh_query::Mesh;
 using geometry::PenetrationAsTrianglePair;
 using geometry::mesh_query::MakeLocalPatchMeshes;
 
-#if 0
-bool CalcSpherePlaneModel() {
-  const bool flip_normals = true;
-
-  // Load mesh for a sphere.
-  std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
-      "drake/multibody/boussinesq_solver/test/sphere.obj", flip_normals);
-  sphere->mesh_index = 0;
-
-  std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
-      "drake/multibody/boussinesq_solver/test/plane.obj", flip_normals);
-  plane->mesh_index = 1;
-
-  const double radius = 1;
-  const double penetration = 0.1;
-  const double z_WSo = radius - penetration;
-
-  // Place sphere a "penetration" distance below z = 0.
-  // Apply an arbirary rotation for testing.
-  Isometry3d X_WSphere{Translation3d{Vector3d(0, 0, z_WSo)}};
-  X_WSphere.linear() = MatrixX<double>::Identity(3, 3);
-
-  // The top of the plane is placed at z = 0
-  Isometry3d X_WPlane{Translation3d{Vector3d(0, 0, 0.0)}};
-  X_WPlane.linear() = MatrixX<double>::Identity(3, 3);
-
-  CalcObjectsContactModel(*sphere, X_WSphere, 1.0, "sphere",
-                          *plane, X_WPlane, 1.0, "plane");
-
-  return true;
-}
-#endif
-
 // B is the one at the bottom
-SpatialForce<double> CalcContactSpatialForceBetweenMeshes(
+std::unique_ptr<BoussinesqContactModelResults<double>>
+CalcContactSpatialForceBetweenMeshes(
     const Mesh<double>& object_A,
     const Isometry3d& X_WA,
     const double young_modulus_star_A,
-    std::string type_A,
     const Mesh<double>& object_B,
     const Isometry3d& X_WB,
-    const double young_modulus_star_B, double sigma) const {
+    const double young_modulus_star_B, double sigma) {
 
   std::vector<PenetrationAsTrianglePair<double>> results = MeshToMeshQuery(
       X_WA, object_A,
@@ -121,22 +84,78 @@ SpatialForce<double> CalcContactSpatialForceBetweenMeshes(
   DRAKE_DEMAND(solved);
 
   // Estimate pressure from KKT multipliers.
+  // Integrate pressure to get the spatial force.
+  // CODE FOR INTEGRATING FORCES HERE.
+
   VectorX<double> pressure = H.transpose() * kkt_multipliers;
+  SpatialForce<double> F_Ao_W;
+  F_Ao_W.SetZero();
+  SpatialForce<double> F_Bo_W;
+  F_Bo_W.SetZero();
+
   for (int i = 0; i < num_nodes_A; ++i) {
+    F_Ao_W.translational() += pressure(i) * object_A_patch->node_normals_G[i];
     double area = object_A_patch->node_areas[i];
     pressure(i) /= area;
   }
 
   for (int i = 0; i < num_nodes_B; ++i) {
+    F_Bo_W.translational() +=
+        pressure(num_nodes_A + i) *
+            object_B_patch->node_normals_G[i];
+
     double area = object_B_patch->node_areas[i];
     pressure(num_nodes_A + i) /= area;
   }
 
+  // I am done using the patches.
+  std::unique_ptr<BoussinesqContactModelResults<double>> boussinesq_results =
+      std::make_unique<BoussinesqContactModelResults<double>>();
 
-  // Integrate pressure to get the spatial force.
+  boussinesq_results->F_Ao_W = F_Ao_W;
+  boussinesq_results->F_Bo_W = F_Bo_W;
+  boussinesq_results->object_A_patch = std::move(object_A_patch);  // now object_A_patch is nullptr.
+  boussinesq_results->object_B_patch = std::move(object_B_patch);
 
-
+  return std::move(boussinesq_results);
 }
+
+
+
+
+#if 0
+bool CalcSpherePlaneModel() {
+  const bool flip_normals = true;
+
+  // Load mesh for a sphere.
+  std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
+      "drake/multibody/boussinesq_solver/test/sphere.obj", flip_normals);
+  sphere->mesh_index = 0;
+
+  std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
+      "drake/multibody/boussinesq_solver/test/plane.obj", flip_normals);
+  plane->mesh_index = 1;
+
+  const double radius = 1;
+  const double penetration = 0.1;
+  const double z_WSo = radius - penetration;
+
+  // Place sphere a "penetration" distance below z = 0.
+  // Apply an arbirary rotation for testing.
+  Isometry3d X_WSphere{Translation3d{Vector3d(0, 0, z_WSo)}};
+  X_WSphere.linear() = MatrixX<double>::Identity(3, 3);
+
+  // The top of the plane is placed at z = 0
+  Isometry3d X_WPlane{Translation3d{Vector3d(0, 0, 0.0)}};
+  X_WPlane.linear() = MatrixX<double>::Identity(3, 3);
+
+  CalcObjectsContactModel(*sphere, X_WSphere, 1.0, "sphere",
+                          *plane, X_WPlane, 1.0, "plane");
+
+  return true;
+}
+#endif
+
 
 #if 0
   const double radius = 1;
@@ -399,7 +418,7 @@ SpatialForce<double> CalcContactSpatialForceBetweenMeshes(
 }
 
 #endif
-}
+
 }  // namespace boussinesq_solver
 }  // namespace multibody
 }  // namespace drake

@@ -1,26 +1,30 @@
 #pragma once
 
 #include "drake/geometry/mesh_query/mesh_query.h"
+#include "drake/multibody/multibody_tree/math/spatial_force.h"
 
 namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
-namespace {
+
+template <typename T>
+struct BoussinesqContactModelResults {
+  SpatialForce<T> F_Ao_W;
+  SpatialForce<T> F_Bo_W;
+  std::unique_ptr<geometry::mesh_query::Mesh<T>> object_A_patch;
+  std::unique_ptr<geometry::mesh_query::Mesh<T>> object_B_patch;
+};
 
 // TODO: Complete the comment here
-bool CalcSpherePlaneModel();
-
-// TODO: Complete the comment here
-SpatialForce<double> CalcContactSpatialForceBetweenMeshes(
+std::unique_ptr<BoussinesqContactModelResults<double>>
+CalcContactSpatialForceBetweenMeshes(
     const geometry::mesh_query::Mesh<double>& object_A,
-    const Isometry3<double>& X_WA,
+    const Eigen::Isometry3d& X_WA,
     const double young_modulus_star_A,
-    std::string type_A,
     const geometry::mesh_query::Mesh<double>& object_B,
-    const Isometry3<double>& X_WB,
-    const double young_modulus_star_B, double sigma) const;
+    const Eigen::Isometry3d& X_WB,
+    const double young_modulus_star_B, double sigma);
 
-}
 }  // namespace boussinesq_solver
 }  // namespace multibody
 }  // namespace drake
