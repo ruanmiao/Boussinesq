@@ -182,6 +182,8 @@ GTEST_TEST(ComplianceMatrixTest, ShpereContactOnShpere) {
   EXPECT_TRUE(solved);
 }
 
+
+
 }  // namespace
 }  // namespace boussinesq_solver
 }  // namespace multibody

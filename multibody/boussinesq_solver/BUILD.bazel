@@ -157,6 +157,26 @@ filegroup(
 )
 
 drake_cc_googletest(
+    name = "example_test",
+    srcs = ["test/example_test.cc"],
+    data = [
+        ":test_objs",
+    ],
+    deps = [
+        ":compliance_matrix",
+        ":jacobian_H_matrix",
+        ":test_helper",
+        "//common:find_resource",
+        "//common/test_utilities:eigen_matrix_compare",
+        "//geometry/mesh_query",
+        "//geometry/mesh_query:vtk_io",
+        "//multibody/shapes",
+        "//solvers:moby_lcp_solver",
+        "@gflags",
+    ],
+)
+
+drake_cc_googletest(
     name = "jacobian_H_matrix_test",
     srcs = ["test/jacobian_H_matrix_test.cc"],
     data = [
