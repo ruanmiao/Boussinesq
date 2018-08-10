@@ -48,8 +48,8 @@ std::unique_ptr<Mesh<double>> LoadMeshFromObj(
   mesh->face_normals_G = CalcMeshFaceNormals(mesh->points_G, mesh->triangles);
   mesh->node_normals_G = CalcAreaWeightedNormals(*mesh);
 
-  // Flip normals BEFORE we compute Mesh::node_element so that indexes were
-  // already updated.
+  // Flipping normals changes the indexing. There we MUST flip normals BEFORE
+  // computing Mesh::node_element.
   if (flip_normals) FlipNormals(mesh.get());
 
   const int num_points = mesh->points_G.size();
