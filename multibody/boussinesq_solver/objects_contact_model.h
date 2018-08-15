@@ -7,12 +7,20 @@ namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
 
+// TODO (mengyao): remove the variables for debugging use
 template <typename T>
 struct BoussinesqContactModelResults {
   SpatialForce<T> F_Ao_W;
   SpatialForce<T> F_Bo_W;
   std::unique_ptr<geometry::mesh_query::Mesh<T>> object_A_patch;
   std::unique_ptr<geometry::mesh_query::Mesh<T>> object_B_patch;
+  VectorX<double> pressure_patch_A;
+  VectorX<double> pressure_patch_B;
+  VectorX<double> deformation_patch_A;
+  VectorX<double> deformation_patch_B;
+
+  std::unique_ptr<std::vector<geometry::PenetrationAsTrianglePair<double>>> contact_results;
+  VectorX<double> kkt_multipliers;
 };
 
 // TODO: Complete the comment here

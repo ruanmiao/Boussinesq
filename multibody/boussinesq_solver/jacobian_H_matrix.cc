@@ -5,6 +5,9 @@
 #include "drake/multibody/shapes/geometry.h"
 #include "drake/common/drake_assert.h"
 
+#include <iostream>
+#define PRINT_VAR(a) std::cout << #a": " << a << std::endl;
+
 namespace drake {
 namespace multibody {
 namespace boussinesq_solver {
@@ -28,6 +31,12 @@ Eigen::MatrixXd CalcJacobianHMatrix(
     const PenetrationAsTrianglePair<double>& query = queries[i_query];
 
     Vector3<double> p_AtoB_W = query.p_WoBs_W - query.p_WoAs_W;
+
+//    PRINT_VAR(query.meshA_index);
+//    PRINT_VAR(patch_A_index);
+//    PRINT_VAR(query.meshB_index);
+//    PRINT_VAR(patch_B_index);
+
     DRAKE_ASSERT(((query.meshA_index == patch_A_index) &&
         (query.meshB_index == patch_B_index)) ||
                  ((query.meshB_index == patch_A_index) &&

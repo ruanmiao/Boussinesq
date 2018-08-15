@@ -29,9 +29,16 @@ filegroup(
     name = "test_objs",
     testonly = 1,
     srcs = [
+        "test/Mesh_2/plane.obj",
+        "test/Mesh_2/sphere.obj",
+        "test/Mesh_3/plane.obj",
+        "test/Mesh_3/sphere.obj",
+        "test/Mesh_4/plane.obj",
+        "test/Mesh_4/sphere.obj",
         "test/ellipsoid.obj",
         "test/plane.obj",
         "test/sphere.obj",
+        "test/triangle.obj",
     ],
 )
 
@@ -44,8 +51,8 @@ drake_cc_library(
         "objects_contact_model.h",
     ],
     deps = [
-        ":jacobian_H_matrix",
         ":compliance_matrix",
+        ":jacobian_H_matrix",
         "//common:essential",
         "//geometry/mesh_query",
         "//multibody/multibody_tree/math",

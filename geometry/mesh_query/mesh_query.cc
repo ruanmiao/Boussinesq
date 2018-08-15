@@ -95,18 +95,6 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
         result.barycentric_A =
             Vector3<double>::Unit(mesh1.node_element[node_index].second);
 
-        if (result.triangleA_index==41) {
-          PRINT_VAR(node_index);
-          PRINT_VAR(result.triangleA_index);
-          PRINT_VAR(result.triangleA.transpose());
-          PRINT_VAR(p_AQ.transpose());
-          PRINT_VAR(p_WQ.transpose());
-
-          PRINT_VAR(mesh1.node_element[node_index].first);
-          PRINT_VAR(mesh1.node_element[node_index].second);
-
-        }
-
         //////////////////////////////////////////////////////////////////////////
         // MESH B INFO
         //////////////////////////////////////////////////////////////////////////
@@ -240,6 +228,9 @@ MakeLocalPatchMeshes(
       nodes_map[node_index] = local_node_index;
       patch_mesh->points_G.push_back(mesh.points_G[node_index]);
       patch_mesh->node_areas[local_node_index] = mesh.node_areas[node_index];
+
+      patch_mesh->node_normals_G.push_back(mesh.node_normals_G[node_index]);
+      patch_mesh->node_triangles.push_back(mesh.node_triangles[node_index]);
     }
 
     for (int triangle_index : patch_triangles) {
@@ -256,6 +247,7 @@ MakeLocalPatchMeshes(
 
       triangles_map[triangle_index] = patch_mesh->triangles.size();
       patch_mesh->triangles.push_back(pach_triangle);
+      patch_mesh->face_normals_G.push_back(mesh.face_normals_G[triangle_index]);
     }
 
     return triangles_map;

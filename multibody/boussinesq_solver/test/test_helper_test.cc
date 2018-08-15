@@ -63,7 +63,7 @@ GTEST_TEST(MeshCircle, NumPerR3) {
 GTEST_TEST(MeshSphere, General1) {
   const Vector3<double> origin(0.0, 0.0, 0.8);
   const double radius = 1.0;
-  const double half_sector = M_PI / 8;
+  const double half_sector = M_PI / 2;
   int num_pr = 4;
   const std::pair<std::vector<Eigen::Vector3d>,
             std::vector<Eigen::Vector3i>>& mesh_data = MeshSphere(

@@ -133,10 +133,10 @@ void AppendNodeCenteredVectorFieldToVTK(
     const std::string& field_name,
     const std::vector<Vector3<double>>& vector_field_G,
     const Isometry3<double>& X_WG = Isometry3<double>::Identity()) {
-  const int num_nodes = vector_field_G.size();
+  //const int num_nodes = vector_field_G.size();
 
   file << std::endl;
-  file << "POINT_DATA " << num_nodes << std::endl;
+  //file << "POINT_DATA " << num_nodes << std::endl;
   file << "VECTORS " + field_name + " double" << std::endl;
 
   for (const auto& vector_G : vector_field_G) {
@@ -186,6 +186,23 @@ void OutputSegmentsToVTK(
   file << "CELL_TYPES " << num_segments << std::endl;
   for (int i_tri = 0; i_tri < num_segments; i_tri++) {
     file << "3" << std::endl;
+  }
+  file << std::endl;
+}
+
+void AppendNodeCenteredScalarFieldToVTK(
+    std::ofstream& file,
+    const std::string& field_name,
+    const VectorX<double>& scalar_field) {
+  //const int num_nodes = scalar_field.size();
+
+  file << std::endl;
+  //file << "POINT_DATA " << num_nodes << std::endl;
+  file << "SCALARS " + field_name + " double" << std::endl;
+  file << "LOOKUP_TABLE default " << std::endl;
+
+  for (int i = 0; i < scalar_field.size(); ++i) {
+    file << fmt::format("{:.8f}\n", scalar_field[i]);
   }
   file << std::endl;
 }
