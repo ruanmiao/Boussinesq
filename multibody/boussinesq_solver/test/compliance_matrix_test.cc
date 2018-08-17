@@ -173,14 +173,25 @@ GTEST_TEST(ComplianceMatrixTest, ShpereContactOnShpere) {
       compliance, h0_gap, &pressure_sol);
   OutputMeshToVTK(points_in_mesh, triangles_in_mesh, pressure_sol);
 
-  double total_force = CalcForceOverMeshOfSphere(
-      points_in_mesh, triangles_in_mesh, pressure_sol, sphere_center);
+  double total_force = CalcForceOverMesh(
+      points_in_mesh, triangles_in_mesh, pressure_sol);
+
+  double force_Hertz = 4.0 / 3.0 /
+      E_modulus *
+      std::sqrt(r_sphere) * pow(indent_ratio * r_sphere, 3.0 / 2.0);
+
 
   PRINT_VAR(compliance.rows());
   PRINT_VAR(total_force);
+  PRINT_VAR(force_Hertz);
+
   EXPECT_GT(moby_LCP_solver.get_num_pivots(), 0);
   EXPECT_TRUE(solved);
 }
+
+
+
+
 
 
 

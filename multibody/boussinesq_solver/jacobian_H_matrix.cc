@@ -19,13 +19,22 @@ Eigen::MatrixXd CalcJacobianHMatrix(
     const std::vector<Vector3<double>>& patch_A,
     const std::vector<Vector3<double>>& patch_B,
     int patch_A_index,
-    int patch_B_index) {
+    int patch_B_index,
+    double young_modulus_star_A,
+    double young_modulus_star_B) {
   const int num_queries = queries.size();
   const int patch_A_size = patch_A.size();
   const int patch_B_size = patch_B.size();
   const int num_nodes = patch_A_size + patch_B_size;
   Eigen::MatrixXd jacobian_H_matrix =
       MatrixX<double>::Zero(num_queries, num_nodes);
+
+  double young_modulus_star = 1 /
+      (1 / young_modulus_star_A + 1 / young_modulus_star_B);
+
+  double ratio_A = (1/young_modulus_star_A) / (1/young_modulus_star);
+  double ratio_B = (1/young_modulus_star_B) / (1/young_modulus_star);
+
 
   for (int i_query = 0; i_query < num_queries; ++i_query) {
     const PenetrationAsTrianglePair<double>& query = queries[i_query];
@@ -70,49 +79,21 @@ Eigen::MatrixXd CalcJacobianHMatrix(
       }
     }
 
-    jacobian_H_matrix.row(i_query) = (n_AtoB_W.dot(query.normal_B_W) * S_B -
-        n_AtoB_W.dot(query.normal_A_W) * S_A);
+    (void) ratio_A;
+    (void) ratio_B;
+
+    jacobian_H_matrix.row(i_query) = -((n_AtoB_W.dot(query.normal_B_W) * S_B -
+        n_AtoB_W.dot(query.normal_A_W) * S_A));
+
+
+//    jacobian_H_matrix.row(i_query) =
+//        -((n_AtoB_W.dot(query.normal_B_W) * S_B * ratio_B -
+//        n_AtoB_W.dot(query.normal_A_W) * S_A * ratio_A));
+
   }
-
-
-//  std::ofstream debug_file("examining_values.txt");
-//
-//  debug_file << "query - 9th: " << std::endl;
-//
-//  PenetrationAsTrianglePair<double> query0 = queries[8];
-//  debug_file << "normal_A: " << query0.normal_A_W(0)
-//                   << ", " << query0.normal_A_W(1)
-//                   << ", " << query0.normal_A_W(2)
-//                   << std::endl;
-//  debug_file << "pos on A in world frame: " << query0.p_WoAs_W(0)
-//             << ", " << query0.p_WoAs_W(1)
-//             << ", " << query0.p_WoAs_W(2)
-//             << std::endl;
-//
-//  debug_file << "triangle on A: " << query0.triangleA(0)
-//             << ", " << query0.triangleA(1)
-//             << ", " << query0.triangleA(2)
-//             << std::endl;
-//
-//
-//  debug_file << "normal_B: " << query0.normal_B_W(0)
-//                   << ", " << query0.normal_B_W(1)
-//                   << ", " << query0.normal_B_W(2)
-//                   << std::endl;
-//
-//  debug_file << "pos on B in world frame: " << query0.p_WoBs_W(0)
-//             << ", " << query0.p_WoBs_W(1)
-//             << ", " << query0.p_WoBs_W(2)
-//             << std::endl;
-//
-//
-//  debug_file.close();
-
-
-
-
   return jacobian_H_matrix;
 }
+
 
 
 }  // namespace boussinesq_solver

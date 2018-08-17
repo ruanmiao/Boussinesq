@@ -18,6 +18,8 @@ struct BoussinesqContactModelResults {
   VectorX<double> pressure_patch_B;
   VectorX<double> deformation_patch_A;
   VectorX<double> deformation_patch_B;
+  VectorX<double> phi0;
+  MatrixX<double> H;
 
   std::unique_ptr<std::vector<geometry::PenetrationAsTrianglePair<double>>> contact_results;
   VectorX<double> kkt_multipliers;

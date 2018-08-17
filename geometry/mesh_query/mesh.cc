@@ -90,8 +90,6 @@ std::unique_ptr<Mesh<double>> LoadMeshFromObj(
   // Allocate and initialize to invalid index values.
   mesh->node_element.resize(num_points, std::make_pair(-1, -1));
 
-  PRINT_VAR(file_name);
-
   // Arbitrarily fill in mesh->node_element.
   const int num_elements = mesh->triangles.size();
   for (int element_index = 0; element_index < num_elements; ++element_index) {
@@ -99,24 +97,10 @@ std::unique_ptr<Mesh<double>> LoadMeshFromObj(
     for (int i = 0; i < 3; ++i) {
       const int node_index = triangle[i];
 
-      if (node_index==34) {
-        PRINT_VAR(element_index);
-        PRINT_VAR(i);
-        PRINT_VAR(triangle.transpose());
-        PRINT_VAR(mesh->node_element[node_index].first);
-        PRINT_VAR(mesh->node_element[node_index].second);
-      }
-
       if (mesh->node_element[node_index].first < 0) {  // not yet initialized.
         mesh->node_element[node_index].first = element_index;
         mesh->node_element[node_index].second = i;
       }
-
-      if (node_index==34) {
-        PRINT_VAR(mesh->node_element[node_index].first);
-        PRINT_VAR(mesh->node_element[node_index].second);
-      }
-
     }
   }
 
