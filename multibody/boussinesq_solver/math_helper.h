@@ -110,6 +110,71 @@ Eigen::Isometry3d CalcTransformationFromTriangleFrame(
     const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
     const Eigen::Vector3d& p3, const Eigen::Vector3d& xA);
 
+/// This method return the volume of a pyramid with a trapesium base, given the
+/// top and bottom length of the trapesium with its height, and the height of
+/// the pyramid.
+/// @param trapesium_length_1 The length of one of the parallel sides
+/// @param trapesium_length_2 The length of the other parallel side
+/// @param trapesium_height The height of the trapesium
+/// @param pyramid_height The height of the pyramid
+/// @returns The volume of the pyramid.
+double CalcVolumeOfPyramidWithTrapesiumBase(
+    double trapesium_length_1, double trapesium_length_2,
+    double trapesium_height, double pyramid_height);
+
+/// This method return the area of a tetrahedral given the 3 nodes at its base,
+/// and its height.
+/// @param p1 First node of the triangle base
+/// @param p2 Second node of the triangle base
+/// @param p3 Third node of the triangle base
+/// @param height The height of the tetrahedral
+/// @returns The volume of the tetrahedral.
+double CalcVolumeOfTetrahedral(
+    const Eigen::Vector3d &p1, const Eigen::Vector3d &p2,
+    const Eigen::Vector3d &p3, double height);
+
+/// This method will return the volume of the 3D geometry defined in the
+/// following way: Given a base triangle p1, p2, p3, with the value on p3 has
+/// its sign different from those of p1 and p2. Do an interpolation of the
+/// value over the whole triangle, with z13 and z23 being the nodes on the
+/// edge connecting p1, p3 and p2, p3. The 3D geometry is the one with the base
+/// being the polygon p1, p2, z23, z13. The heights are the corresponding
+/// values interpolated over the region.
+/// @param p1_in The values of p1 and p2 are of the same sign
+/// @param value_1 The value at p1.
+/// @param p2_in The values of p1 and p2 are of the same sign
+/// @param value_2 The value at p2.
+/// @param p3_out The value of p3 is different from those of p1 and p2
+/// @param value_3 The value at p3.
+/// @returns The volume defined by the portion including p1 and p2.
+/// The sign of the volume is the same as those of p1 and p2
+double CalcInterpolatedVolumeExcludingOneNode(
+    const Eigen::Vector3d& p1_in, double value_1,
+    const Eigen::Vector3d& p2_in, double value_2,
+    const Eigen::Vector3d& p3_out, double value_3);
+
+/// This method will return the volume of the 3D geometry defined in the
+/// following way: Given a base triangle p1, p2, p3, with the value on p3 has
+/// its sign different from those of p1 and p2. Do an interpolation of the
+/// value over the whole triangle, with z13 and z23 being the nodes on the
+/// edge connecting p1, p3 and p2, p3. The 3D geometry is the one with the base
+/// being the polygon p3, z23, z13. The heights are the corresponding
+/// values interpolated over the region.
+/// @param p1_out The values of p1 and p2 are of the same sign
+/// @param value_1 The value at p1.
+/// @param p2_out The values of p1 and p2 are of the same sign
+/// @param value_2 The value at p2.
+/// @param p3_in The value of p3 is different from those of p1 and p2
+/// @param value_3 The value at p3.
+/// @returns The volume defined by the portion including p3.
+/// The sign of the volume is the same as that of p3
+double CalcInterpolatedVolumeExcludingTwoNode(
+    const Eigen::Vector3d& p1_out, double value_1,
+    const Eigen::Vector3d& p2_out, double value_2,
+    const Eigen::Vector3d& p3_in, double value_3);
+
+
+
 }  // namespace boussinesq_solver
 }  // namespace multibody
 }  // namespace drake

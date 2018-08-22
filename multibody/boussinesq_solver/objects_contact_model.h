@@ -33,7 +33,24 @@ CalcContactSpatialForceBetweenMeshes(
     const double young_modulus_star_A,
     const geometry::mesh_query::Mesh<double>& object_B,
     const Eigen::Isometry3d& X_WB,
-    const double young_modulus_star_B, double sigma);
+    const double young_modulus_star_B,
+    double sigma,
+    bool press_in = true);
+
+
+
+std::unique_ptr<BoussinesqContactModelResults<double>>
+CalcContactSpatialForceBetweenMeshesByPressure(
+    const geometry::mesh_query::Mesh<double>& object_A,
+    const Eigen::Isometry3d& X_WA,
+    const double young_modulus_star_A,
+    const geometry::mesh_query::Mesh<double>& object_B,
+    const Eigen::Isometry3d& X_WB,
+    const double young_modulus_star_B,
+    double sigma,
+    bool press_in = true);
+
+
 
 }  // namespace boussinesq_solver
 }  // namespace multibody

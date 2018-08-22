@@ -119,7 +119,7 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
 
   // Reverse roles of mesh A and B. Now scan each node on Mesh B and perform a
   // point-mesh distance query with mesh A.
-  Mesh1NodesVsMesh2Surface(X_WB, meshB, X_WA, meshA);
+  // Mesh1NodesVsMesh2Surface(X_WB, meshB, X_WA, meshA);
 
   return pairs;
 }

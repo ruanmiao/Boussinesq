@@ -138,6 +138,63 @@ Eigen::Isometry3d CalcTransformationFromTriangleFrame(
   return X_WT;
 }
 
+double CalcVolumeOfPyramidWithTrapesiumBase(
+    double trapesium_length_1, double trapesium_length_2,
+    double trapesium_height, double pyramid_height) {
+  double area_base = (trapesium_length_1 + trapesium_length_2) *
+      trapesium_height / 2.0;
+  return  area_base * pyramid_height / 3.0;
+}
+
+double CalcVolumeOfTetrahedral(
+    const Eigen::Vector3d &p1, const Eigen::Vector3d &p2,
+    const Eigen::Vector3d &p3, double height) {
+  Eigen::Vector3d area_vec = CalcTriangleArea(p1, p2, p3);
+  double area = area_vec.norm();
+  return area * height / 3.0;
+}
+
+double CalcInterpolatedVolumeExcludingOneNode(
+    const Eigen::Vector3d& p1_in, double value_1,
+    const Eigen::Vector3d& p2_in, double value_2,
+    const Eigen::Vector3d& p3_out, double value_3) {
+  double cut_ratio_p1p3 = fabs(value_1)/(fabs(value_1) + fabs(value_3));
+  double cut_ratio_p2p3 = fabs(value_2)/(fabs(value_2) + fabs(value_3));
+
+  Eigen::Vector3d cut_p1p3 = p1_in +
+      cut_ratio_p1p3 * (p3_out - p1_in);
+  Eigen::Vector3d cut_p2p3 = p2_in +
+      cut_ratio_p2p3 * (p3_out - p2_in);
+
+  double volume_tetrahedral =
+      CalcVolumeOfTetrahedral(p1_in, cut_p2p3, cut_p1p3, value_1);
+
+  Eigen::Vector3d l12 = p2_in - p1_in;
+  Eigen::Vector3d area_p1_p2_p2p3 = CalcTriangleArea(p1_in, p2_in, cut_p2p3);
+  double height_from_p2p3 = area_p1_p2_p2p3.norm() * 2.0 / l12.norm();
+  double volume_pyramid =
+      CalcVolumeOfPyramidWithTrapesiumBase(
+          value_1, value_2, height_from_p2p3, l12.norm());
+
+  return volume_tetrahedral + volume_pyramid;
+}
+
+double CalcInterpolatedVolumeExcludingTwoNode(
+    const Eigen::Vector3d& p1_out, double value_1,
+    const Eigen::Vector3d& p2_out, double value_2,
+    const Eigen::Vector3d& p3_in, double value_3) {
+  double cut_ratio_p1p3 = fabs(value_1)/(fabs(value_1) + fabs(value_3));
+  double cut_ratio_p2p3 = fabs(value_2)/(fabs(value_2) + fabs(value_3));
+
+  Eigen::Vector3d cut_p1p3 = p1_out +
+      cut_ratio_p1p3 * (p3_in - p1_out);
+  Eigen::Vector3d cut_p2p3 = p2_out +
+      cut_ratio_p2p3 * (p3_in - p2_out);
+
+  return CalcVolumeOfTetrahedral(p3_in, cut_p1p3, cut_p2p3, value_3);
+}
+
+
 }  // namespace boussinesq_solver
 }  // namespace multibody
 }  // namespace drake
