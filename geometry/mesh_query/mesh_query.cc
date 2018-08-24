@@ -48,6 +48,7 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
       const Vector3<double>& p_AQ = mesh1.points_G[node_index];
       const Vector3<double> p_WQ = X_WM1 * p_AQ;
 
+
       PointMeshDistance<double> point_mesh_result;
 
       const bool is_inside = CalcPointToMeshNegativeDistance(
@@ -115,11 +116,11 @@ std::vector<PenetrationAsTrianglePair<double>> MeshToMeshQuery(
 
   // Scan each node on Mesh A and perform a point-mesh distance query with
   // mesh B.
-  Mesh1NodesVsMesh2Surface(X_WA, meshA, X_WB, meshB);
+//  Mesh1NodesVsMesh2Surface(X_WA, meshA, X_WB, meshB);
 
   // Reverse roles of mesh A and B. Now scan each node on Mesh B and perform a
   // point-mesh distance query with mesh A.
-  // Mesh1NodesVsMesh2Surface(X_WB, meshB, X_WA, meshA);
+  Mesh1NodesVsMesh2Surface(X_WB, meshB, X_WA, meshA);
 
   return pairs;
 }
@@ -291,14 +292,16 @@ MakeLocalPatchMeshes(
   return std::make_pair(std::move(meshA_patch), std::move(meshB_patch));
 };
 
-void CalcPointToMeshPositiveDistance(
+void  CalcPointToMeshPositiveDistance(
     const Isometry3<double>& X_FA,
     const std::vector<Vector3<double>>& points_A,
     const std::vector<Vector3<int>>& triangles,
     const std::vector<Vector3<double>>& face_normals_A,
     const std::vector<Vector3<double>>& node_normals_A,
     const Vector3<double>& p_FQ,
-    PointMeshDistance<double>* point_mesh_distance_ptr) {
+    PointMeshDistance<double>* point_mesh_distance_ptr,
+    bool debug_mode) {
+  (void) debug_mode;
   using std::abs;
   using std::min;
 
@@ -316,6 +319,8 @@ void CalcPointToMeshPositiveDistance(
   Vector3<double> min_dist_p_AP;
 
   // "Brute force" scans all triangles and computes the distance to each.
+
+
   for (size_t triangle_index = 0;
        triangle_index < triangles.size(); ++triangle_index) {
     const Vector3<int>& triangle = triangles[triangle_index];
@@ -341,6 +346,7 @@ void CalcPointToMeshPositiveDistance(
 
 
     const double distance2 = (p_AP-p_AQ).squaredNorm();
+
 
     if (distance2 < min_distance2) {
       min_distance2 = distance2;
@@ -371,6 +377,7 @@ void CalcPointToMeshPositiveDistance(
   point_mesh_distance.normal_F = X_FA.linear() * normal_A;
   point_mesh_distance.triangle = triangle;
   point_mesh_distance.barycentric_P = min_dist_barycentric;
+
 }
 
 // Returns true if the point is inside the convex mesh.
@@ -622,33 +629,55 @@ Vector3<double> CalcClosestPointOnTriangleBarycentricCoordinates(
 
   // P is outside (or on) AB if the triple product [N PA PB] <= 0.
   const Vector3<double> n = (b-a).cross(c-a);
+
+//  const Vector3<double> S_4pab = n.cross((a-p).cross(b-p));
+//  const double vc_A = S_4pab.norm();
   const double vc = n.dot((a-p).cross(b-p));
+
 
   // If P is outside AB and within feature region of AB, return the projection
   // of P onto AB.
-  if (vc <= 0.0 && snom >= 0.0 && sdenom >= 0.0)
+  if (vc <= 0.0 && snom >= 0.0 && sdenom >= 0.0) {
+//    return Vector3<double>(sdenom/(snom+sdenom), snom/(snom+sdenom), 0.0);
     return Vector3<double>(sdenom/(snom+sdenom), snom/(snom+sdenom), 0.0);
+  }
 
   // P is outside (or on) BC if the triple product [N PB PC] <= 0.
+
+//  const Vector3<double> S_4pbc = n.cross((b-p).cross(c-p));
+//  const double va_A = S_4pbc.norm();
   const double va = n.dot((b-p).cross(c-p));
+
 
   // If P is outside BC and within feature region of BC,
   // return projection of P onto BC.
-  if (va <= 0.0 && unom >= 0.0 && udenom >= 0.0)
+  if (va <= 0.0 && unom >= 0.0 && udenom >= 0.0) {
+//    return Vector3<double>(0.0, udenom/(unom+udenom), unom/(unom+udenom));
     return Vector3<double>(0.0, udenom/(unom+udenom), unom/(unom+udenom));
+  }
 
   // P is outside (or on) CA if the triple product [N PC PA] <= 0.
+//  const Vector3<double> S_4pca = n.cross((c-p).cross(a-p));
+//  const double vb_A = S_4pca.norm();
   const double vb = n.dot((c-p).cross(a-p));
+
+
 
   // If P is outside CA and within feature region of CA, return the projection
   // of P onto CA.
-  if (vb <= 0 && tnom >= 0.0 && tdenom >= 0.0)
-    return Vector3<double>(tnom/(tnom+tdenom), 0.0, tdenom/(tnom+tdenom));
+  if (vb <= 0 && tnom >= 0.0 && tdenom >= 0.0) {
+//    return Vector3<double>(tnom/(tnom+tdenom), 0.0, tdenom/(tnom+tdenom));
+    return Vector3<double>(tdenom/(tnom+tdenom), 0.0, tnom/(tnom+tdenom));
+  }
 
   // P must project inside the face region. Compute Q using barycentric
   // coordinates.
   const double u = va/(va+vb+vc);
   const double v = vb/(va+vb+vc);
+
+//  const double u = va_A/(va_A+vb_A+vc_A);
+//  const double v = vb_A/(va_A+vb_A+vc_A);
+
   const double w = 1.0 - u - v;  // = vc//(va+vb+vc).
   return Vector3<double>(u, v, w);
 }

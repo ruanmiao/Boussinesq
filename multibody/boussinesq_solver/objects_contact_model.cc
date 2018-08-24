@@ -62,6 +62,33 @@ CalcContactSpatialForceBetweenMeshes(
   std::unique_ptr<Mesh<double>> object_A_patch = std::move(patches.first);
   std::unique_ptr<Mesh<double>> object_B_patch = std::move(patches.second);
 
+
+//
+//  std::cout << "***************************" << std::endl;
+//  PenetrationAsTrianglePair<double> debug_query = results.at(4);
+//  PRINT_VAR(debug_query.meshA_index);
+//  PRINT_VAR(debug_query.p_WoAs_W);
+//  PRINT_VAR(debug_query.p_WoBs_W);
+//  PRINT_VAR(debug_query.triangleB);
+//  PRINT_VAR(debug_query.barycentric_B);
+//
+//  const Vector3<int>& debug_triangle = debug_query.triangleB;
+//
+//  PRINT_VAR(object_B_patch->points_G[debug_triangle(0)]);
+//  PRINT_VAR(object_B_patch->points_G[debug_triangle(1)]);
+//  PRINT_VAR(object_B_patch->points_G[debug_triangle(2)]);
+//
+//  Vector3d actual_p_B = object_B_patch->points_G[debug_triangle(0)]
+//      * debug_query.barycentric_B[0] +
+//      object_B_patch->points_G[debug_triangle(1)]
+//          * debug_query.barycentric_B[1] +
+//      object_B_patch->points_G[debug_triangle(2)]
+//          * debug_query.barycentric_B[2];
+//  PRINT_VAR(actual_p_B);
+//
+//  std::cout << "***************************" << std::endl;
+
+
   const int num_phis = results.size();
   const int num_nodes_A = object_A_patch->points_G.size();
   const int num_nodes_B = object_B_patch->points_G.size();
@@ -76,7 +103,7 @@ CalcContactSpatialForceBetweenMeshes(
 
   PRINT_VAR(object_A_patch->points_G.size());
   PRINT_VAR(object_B_patch->points_G.size());
-
+  PRINT_VAR(results.size());
 
   DRAKE_DEMAND(H.rows() == num_phis);
   DRAKE_DEMAND(H.cols() == num_nodes);
@@ -257,14 +284,19 @@ CalcContactSpatialForceBetweenMeshes(
 
   for (int i = 0; i < num_nodes_A; ++i) {
 
+//    F_Ao_W.translational() += force_on_nodes(i)
+//        * object_A_patch->node_normals_G[i];
     F_Ao_W.translational() += force_on_nodes(i)
-        * object_A_patch->node_normals_G[i];
+        * Eigen::Vector3d::UnitZ();
   }
 
   for (int i = 0; i < num_nodes_B; ++i) {
 
+//    F_Bo_W.translational() += force_on_nodes(num_nodes_A + i)
+//        * object_B_patch->node_normals_G[i];
+
     F_Bo_W.translational() += force_on_nodes(num_nodes_A + i)
-        * object_B_patch->node_normals_G[i];
+        * Eigen::Vector3d::UnitZ();
   }
 
 
@@ -298,6 +330,7 @@ CalcContactSpatialForceBetweenMeshes(
 
   boussinesq_results->contact_results = std::move(owned_results);
   boussinesq_results->phi0 = phi0;
+  boussinesq_results->phi_u = phi_deformation;
   boussinesq_results->H = H;
 
 

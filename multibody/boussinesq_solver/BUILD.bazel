@@ -36,6 +36,7 @@ filegroup(
         "test/Mesh_2/sphere.obj",
         "test/Mesh_3/plane.obj",
         "test/Mesh_3/plane_sphere.obj",
+        "test/Mesh_3/plane_sphere_flip.obj",
         "test/Mesh_3/sphere.obj",
         "test/Mesh_4/plane.obj",
         "test/Mesh_4/sphere.obj",
@@ -147,6 +148,27 @@ drake_cc_library(
     ],
     deps = [
         "//common:essential",
+    ],
+)
+
+drake_cc_googletest(
+    name = "sphere_compliance_test",
+    srcs = ["test/sphere_compliance_test.cc"],
+    data = [
+        ":test_objs",
+    ],
+    deps = [
+        ":compliance_matrix",
+        ":jacobian_H_matrix",
+        ":objects_contact_model",
+        ":test_helper",
+        "//common:find_resource",
+        "//common/test_utilities:eigen_matrix_compare",
+        "//geometry/mesh_query",
+        "//geometry/mesh_query:vtk_io",
+        "//multibody/shapes",
+        "//solvers:moby_lcp_solver",
+        "@gflags",
     ],
 )
 

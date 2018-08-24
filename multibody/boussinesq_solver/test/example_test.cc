@@ -47,18 +47,32 @@ int RunSpherePlaneModel(
     double penetration, double sigma,
     std::ofstream& file_force_sphere, std::ofstream& file_force_plane,
     std::ofstream& file_penetration, std::ofstream& file_force_hertz) {
-  const bool flip_normals = true;
+
+  // Load mesh, strip and curved strip.
+//  const bool flip_normals = false;
+//  std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
+//      "drake/multibody/boussinesq_solver/test/Mesh_4/strip_curved.obj", flip_normals);
+//  sphere->mesh_index = 0;
+//
+//  std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
+//      "drake/multibody/boussinesq_solver/test/Mesh_4/strip.obj", flip_normals);
+//  plane->mesh_index = 1;
 
   // Load mesh for a sphere.
+  const bool flip_normals = true;
   std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
-      "drake/multibody/boussinesq_solver/test/Mesh_2/sphere.obj", flip_normals);
+      "drake/multibody/boussinesq_solver/test/Mesh_3/sphere.obj", flip_normals);
   sphere->mesh_index = 0;
 
   std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
-      "drake/multibody/boussinesq_solver/test/Mesh_2/plane_sphere.obj", flip_normals);
+      "drake/multibody/boussinesq_solver/test/Mesh_3/plane.obj", flip_normals);
   plane->mesh_index = 1;
 
+
+
+
   // Flip the two meshes
+// const bool flip_normals = true;
 //  std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
 //      "drake/multibody/boussinesq_solver/test/Mesh_3/sphere.obj", flip_normals);
 //  plane->mesh_index = 0;
@@ -72,11 +86,13 @@ int RunSpherePlaneModel(
   const double z_WSo = radius - penetration;
 
   const double young_modulus_star_sphere = 1.0;
-  const double young_modulus_star_plane = 1.0;
+  const double young_modulus_star_plane = 1000.0;
 
   // Place sphere a "penetration" distance below z = 0.
   // Apply an arbirary rotation for testing.
   Isometry3d X_WSphere{Translation3d{Vector3d(0, 0, z_WSo)}};
+//  (void) z_WSo;
+//  Isometry3d X_WSphere{Translation3d{Vector3d(0, 0, 0)}};
   X_WSphere.linear() = MatrixX<double>::Identity(3, 3);
 
   // The top of the plane is placed at z = 0
@@ -245,19 +261,27 @@ int RunSpherePlaneModel(
 
   VectorX<double> kkt_twice(2*boussinesq_results_by_force->kkt_multipliers.size());
   VectorX<double> phi0_twice(2*boussinesq_results_by_force->phi0.size());
+  VectorX<double> phi_u_twice(2*boussinesq_results_by_force->phi0.size());
+  VectorX<double> phi_twice(2*boussinesq_results_by_force->phi0.size());
   for (int i=0;i<boussinesq_results_by_force->kkt_multipliers.size(); ++i) {
     kkt_twice(2*i) = boussinesq_results_by_force->kkt_multipliers(i);
     kkt_twice(2*i+1) = boussinesq_results_by_force->kkt_multipliers(i);
 
     phi0_twice(2*i) = boussinesq_results_by_force->phi0(i);
     phi0_twice(2*i+1) = boussinesq_results_by_force->phi0(i);
+
+    phi_u_twice(2*i) = boussinesq_results_by_force->phi_u(i);
+    phi_u_twice(2*i+1) = boussinesq_results_by_force->phi_u(i);
+
+    phi_twice(2*i) = phi0_twice(2*i) + phi_u_twice(2*i);
+    phi_twice(2*i+1) = phi0_twice(2*i + 1) + phi_u_twice(2*i + 1);
   }
   file << "POINT_DATA " << kkt_twice.rows() << std::endl;
   AppendNodeCenteredScalarFieldToVTK(file, "kkt_multipliers", kkt_twice);
   AppendNodeCenteredScalarFieldToVTK(file, "phi0", phi0_twice);
+  AppendNodeCenteredScalarFieldToVTK(file, "phi_u", phi_u_twice);
+  AppendNodeCenteredScalarFieldToVTK(file, "phi", phi_twice);
   file.close();
-
-
 
 
 

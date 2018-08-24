@@ -19,6 +19,7 @@ struct BoussinesqContactModelResults {
   VectorX<double> deformation_patch_A;
   VectorX<double> deformation_patch_B;
   VectorX<double> phi0;
+  VectorX<double> phi_u;
   MatrixX<double> H;
 
   std::unique_ptr<std::vector<geometry::PenetrationAsTrianglePair<double>>> contact_results;

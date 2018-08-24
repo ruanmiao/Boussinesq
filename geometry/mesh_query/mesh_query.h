@@ -63,7 +63,8 @@ void CalcPointToMeshPositiveDistance(
     const std::vector<Vector3<double>>& face_normals_A,
     const std::vector<Vector3<double>>& node_normals_A,
     const Vector3<double>& p_FQ,
-    PointMeshDistance<double>* point_mesh_distance_ptr = nullptr);
+    PointMeshDistance<double>* point_mesh_distance_ptr = nullptr,
+        bool debug_mode = false);
 
 std::pair<std::unique_ptr<Mesh<double>>, std::unique_ptr<Mesh<double>>>
 MakeLocalPatchMeshes(
