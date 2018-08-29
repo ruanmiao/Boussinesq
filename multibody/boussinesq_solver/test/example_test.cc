@@ -1,6 +1,8 @@
+#include <chrono>
 #include <memory>
 #include <vector>
 #include <limits>
+#include <utility>
 
 #include <gtest/gtest.h>
 #include <gflags/gflags.h>
@@ -43,9 +45,14 @@ using geometry::mesh_query::AppendNodeCenteredScalarFieldToVTK;
 using geometry::PenetrationAsTrianglePair;
 using geometry::mesh_query::OutputSegmentsToVTK;
 
-int RunSpherePlaneModel(
+using clock = std::chrono::steady_clock;
+
+std::unique_ptr<BoussinesqContactModelResults<double>> RunSpherePlaneModel(
+    int penetration_index, int mesh_index,
     double penetration, double sigma,
+    const std::string& sphere_file_name,
     double young_modulus_star_sphere,
+    const std::string& plane_file_name,
     double young_modulus_star_plane) {
 
   // NOTE: Only run meshes 1-4. The rest are garbage.
@@ -53,16 +60,15 @@ int RunSpherePlaneModel(
   // Load mesh for a sphere.
   const bool flip_normals = true;
   std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
-      "drake/multibody/boussinesq_solver/test/Mesh_1/sphere.obj", flip_normals);
+      sphere_file_name, flip_normals);
   sphere->mesh_index = 0;
 
   std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
-      "drake/multibody/boussinesq_solver/test/Mesh_1/plane.obj", flip_normals);
+      plane_file_name, flip_normals);
   plane->mesh_index = 1;
 
   const double radius = 1;
   const double z_WSo = radius - penetration;
-
 
   // Place sphere a "penetration" distance below z = 0.
   // Apply an arbirary rotation for testing.
@@ -105,7 +111,9 @@ int RunSpherePlaneModel(
   (void) num_nodes;
 
 
-  std::ofstream patch_file("sphere_patch.vtk");
+  auto mesh_number_str = fmt::format("{:03d}", mesh_index);
+
+  std::ofstream patch_file("sphere_patch_" + mesh_number_str + ".vtk");
   OutputMeshToVTK(patch_file, boussinesq_results_by_force->object_A_patch->points_G, boussinesq_results_by_force->object_A_patch->triangles, X_WSphere);
   patch_file << "POINT_DATA " << num_nodes_A << std::endl;
   AppendNodeCenteredScalarFieldToVTK(patch_file, "deformation", boussinesq_results_by_force->deformation_patch_A);
@@ -117,7 +125,7 @@ int RunSpherePlaneModel(
   AppendNodeCenteredVectorFieldToVTK(patch_file, "u", u_A, X_WSphere);
   patch_file.close();
 
-  patch_file.open("plane_patch.vtk", std::ios::out);
+  patch_file.open("plane_patch_" + mesh_number_str + ".vtk", std::ios::out);
   OutputMeshToVTK(patch_file, boussinesq_results_by_force->object_B_patch->points_G, boussinesq_results_by_force->object_B_patch->triangles, X_WPlane);
   patch_file << "POINT_DATA " << num_nodes_B << std::endl;
   AppendNodeCenteredScalarFieldToVTK(patch_file, "deformation", boussinesq_results_by_force->deformation_patch_B);
@@ -158,7 +166,7 @@ int RunSpherePlaneModel(
                    return pair.p_WoBs_W;
                  });
 
-  std::ofstream file("pairs.vtk");
+  std::ofstream file("pairs_" + mesh_number_str + ".vtk");
   OutputSegmentsToVTK(file, pointsA, pointsB);
 
 
@@ -187,47 +195,57 @@ int RunSpherePlaneModel(
   file.close();
 
   PRINT_VAR(force_Hertz);
-  return 0;
+  return std::move(boussinesq_results_by_force);
 }
 
 GTEST_TEST(ExampleTest, SpherePlane) {
+  std::vector<double> indentations{0.05};
+  std::vector<int> meshes{1, 2};
 
-//  std::vector<double> indentations{0.07, 0.075, 0.08, 0.085, 0.09, 0.095, 0.1};
-  std::vector<double> indentations{0.1};
+  double young_modulus_star_sphere = 1.0;
+  double young_modulus_star_plane = 10000.0;
 
-//  std::vector<double> vec_young_modulus_star_sphere{1000, 1, 1};
-//  std::vector<double> vec_young_modulus_star_plane{1, 1000, 1};
-  std::vector<double> vec_young_modulus_star_sphere{1.0};
-  std::vector<double> vec_young_modulus_star_plane{1000.0};
+  PRINT_VAR(young_modulus_star_sphere);
+  PRINT_VAR(young_modulus_star_plane);
 
   int num_indentations = indentations.size();
-  int num_youngs = vec_young_modulus_star_plane.size();
 
-  for (int i = 0; i < num_indentations; i++) {
+  for (int indentation_index = 0;
+       indentation_index < num_indentations; indentation_index++) {
+    double indentation = indentations[indentation_index];
+    PRINT_VAR(indentation);
 
-    double indentation = indentations[i];
-    std::cout << "*********** Indentation: "
-              << indentation
-              << "*****************."
-              << std::endl;
+    for (int mesh_index : meshes) {
+      auto mesh_number_str = fmt::format("{:d}", mesh_index);
 
-    for(int i_param = 0; i_param < num_youngs; i_param++) {
+      const std::string sphere_file_name =
+          "drake/multibody/boussinesq_solver/test/Mesh_" +
+              mesh_number_str + "/sphere.obj";
+      const std::string plane_file_name =
+          "drake/multibody/boussinesq_solver/test/Mesh_" +
+              mesh_number_str + "/plane.obj";
 
-      double young_modulus_star_sphere = vec_young_modulus_star_sphere[i_param];
-      double young_modulus_star_plane = vec_young_modulus_star_plane[i_param];
+      PRINT_VAR(sphere_file_name);
+      PRINT_VAR(plane_file_name);
 
-      std::cout << "----------E_sphere: "
-                << young_modulus_star_sphere
-                << "        E_plane: "
-                   << young_modulus_star_plane
-                << " -------------------------"
-                << std::endl;
+      const clock::time_point start_time = clock::now();
 
-      RunSpherePlaneModel(indentation, 0.1 /* sigma */,
-                          young_modulus_star_sphere, young_modulus_star_plane);
+      const auto& results = RunSpherePlaneModel(
+          indentation_index, mesh_index,
+          indentation, 0.1 /* sigma */,
+          sphere_file_name, young_modulus_star_sphere,
+          plane_file_name, young_modulus_star_plane);
+
+      const clock::time_point end_time = clock::now();
+
+      double wall_clock_time
+          = std::chrono::duration<double>(end_time - start_time).count();
+
+      PRINT_VAR(wall_clock_time);
+
+      PRINT_VAR(results->F_Ao_W);
+      PRINT_VAR(results->F_Bo_W);
     }
-
-
 
     std::cout << std::endl;
   }
