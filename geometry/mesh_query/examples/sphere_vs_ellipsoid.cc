@@ -63,6 +63,7 @@ int DoMain() {
   OutputMeshToVTK(bottom_sphere_file, ellipsoid->points_G, ellipsoid->triangles, X_WEllipsoid);
   AppendCellCenteredVectorFieldToVTK(
       bottom_sphere_file, "FaceNormals", ellipsoid->face_normals_G, X_WEllipsoid);
+  bottom_sphere_file << "POINT_DATA " << ellipsoid->points_G.size() << std::endl;
   AppendNodeCenteredVectorFieldToVTK(
       bottom_sphere_file, "NodeNormals", ellipsoid->node_normals_G, X_WEllipsoid);
   bottom_sphere_file.close();
@@ -71,6 +72,7 @@ int DoMain() {
   OutputMeshToVTK(top_sphere_file, sphere->points_G, sphere->triangles, X_WSphere);
   AppendCellCenteredVectorFieldToVTK(
       top_sphere_file, "FaceNormals", sphere->face_normals_G, X_WSphere);
+  top_sphere_file << "POINT_DATA " << sphere->points_G.size() << std::endl;
   AppendNodeCenteredVectorFieldToVTK(
       top_sphere_file, "NodeNormals", sphere->node_normals_G, X_WSphere);
   top_sphere_file.close();
