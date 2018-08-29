@@ -138,6 +138,7 @@ std::unique_ptr<BoussinesqContactModelResults<double>> RunSpherePlaneModel(
   patch_file.close();
 
   // Compute some statistics and print them out to the std::out
+#if 0
   double max_uA_from_phi = 0;
   for (int i = 0; i < num_nodes_A; i++) {
     double u = u_A[i](2);
@@ -150,8 +151,7 @@ std::unique_ptr<BoussinesqContactModelResults<double>> RunSpherePlaneModel(
     if (-u > max_uB_from_phi)
       max_uB_from_phi = -u;
   }
-  PRINT_VAR(max_uA_from_phi);
-  PRINT_VAR(max_uB_from_phi);
+#endif
 
   const auto& results = *boussinesq_results_by_force->contact_results;
   std::vector<Vector3d> pointsA(results.size());
@@ -245,6 +245,9 @@ GTEST_TEST(ExampleTest, SpherePlane) {
 
       PRINT_VAR(results->F_Ao_W);
       PRINT_VAR(results->F_Bo_W);
+
+      std::cout << std::endl;
+      std::cout << std::endl;
     }
 
     std::cout << std::endl;

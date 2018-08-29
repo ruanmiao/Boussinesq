@@ -39,9 +39,6 @@ CalcContactSpatialForceBetweenMeshes(
     const double young_modulus_star_B,
     double sigma,
     bool press_in) {
-
-  std::cout << "Results by solving force" << std::endl;
-
   auto owned_results =
       std::make_unique<std::vector<PenetrationAsTrianglePair<double>>>();
   std::vector<PenetrationAsTrianglePair<double>>& results = *owned_results;
@@ -62,48 +59,15 @@ CalcContactSpatialForceBetweenMeshes(
   std::unique_ptr<Mesh<double>> object_A_patch = std::move(patches.first);
   std::unique_ptr<Mesh<double>> object_B_patch = std::move(patches.second);
 
-
-//
-//  std::cout << "***************************" << std::endl;
-//  PenetrationAsTrianglePair<double> debug_query = results.at(4);
-//  PRINT_VAR(debug_query.meshA_index);
-//  PRINT_VAR(debug_query.p_WoAs_W);
-//  PRINT_VAR(debug_query.p_WoBs_W);
-//  PRINT_VAR(debug_query.triangleB);
-//  PRINT_VAR(debug_query.barycentric_B);
-//
-//  const Vector3<int>& debug_triangle = debug_query.triangleB;
-//
-//  PRINT_VAR(object_B_patch->points_G[debug_triangle(0)]);
-//  PRINT_VAR(object_B_patch->points_G[debug_triangle(1)]);
-//  PRINT_VAR(object_B_patch->points_G[debug_triangle(2)]);
-//
-//  Vector3d actual_p_B = object_B_patch->points_G[debug_triangle(0)]
-//      * debug_query.barycentric_B[0] +
-//      object_B_patch->points_G[debug_triangle(1)]
-//          * debug_query.barycentric_B[1] +
-//      object_B_patch->points_G[debug_triangle(2)]
-//          * debug_query.barycentric_B[2];
-//  PRINT_VAR(actual_p_B);
-//
-//  std::cout << "***************************" << std::endl;
-
-
   const int num_phis = results.size();
   const int num_nodes_A = object_A_patch->points_G.size();
   const int num_nodes_B = object_B_patch->points_G.size();
   const int num_nodes = num_nodes_A + num_nodes_B;
 
-
   const MatrixX<double> H = CalcJacobianHMatrix(
       results, object_A_patch->points_G, object_B_patch->points_G,
       object_A_patch->mesh_index, object_B_patch->mesh_index,
   young_modulus_star_A, young_modulus_star_B);
-
-
-  PRINT_VAR(object_A_patch->points_G.size());
-  PRINT_VAR(object_B_patch->points_G.size());
-  PRINT_VAR(results.size());
 
   DRAKE_DEMAND(H.rows() == num_phis);
   DRAKE_DEMAND(H.cols() == num_nodes);
@@ -114,8 +78,6 @@ CalcContactSpatialForceBetweenMeshes(
       (1.0 / young_modulus_star_A + 1.0 / young_modulus_star_B);
 
   (void) young_modulus_star;
-
-
 
   VectorX<double> area_matrix = VectorX<double>::Zero(num_nodes);
   VectorX<double> area_matrix_inv = VectorX<double>::Zero(num_nodes);
@@ -151,41 +113,30 @@ CalcContactSpatialForceBetweenMeshes(
   PRINT_VAR(compliance_time);
 
 
-
-
   // TODO: (mengyao) Tobe changed back
   MatrixX<double> H_trans = H.transpose();
 
   // Delassus operator.
-//  const MatrixX<double> W = H * C * H_trans;
-
+  //  const MatrixX<double> W = H * C * H_trans;
   MatrixX<double> C_times_area_inv = C * area_matrix_inv.asDiagonal();
   DRAKE_ASSERT(C_times_area_inv.rows() == num_nodes);
   DRAKE_ASSERT(C_times_area_inv.cols() == num_nodes);
   MatrixX<double> W = H * C_times_area_inv * H_trans;
 
-
-
   VectorX<double> phi0(num_phis);
   for (int i = 0; i < num_phis; ++i) {
     phi0(i) = results[i].signed_distance;
   }
-
   VectorX<double> kkt_multipliers(num_phis);
 
-
   const clock::time_point start_LCP = clock::now();
-
-
   solvers::MobyLCPSolver<double> moby_LCP_solver;
   const bool solved = moby_LCP_solver.SolveLcpLemke(W, phi0, &kkt_multipliers);
   DRAKE_DEMAND(solved);
-
   const clock::time_point end_LCP = clock::now();
   double LCP_time = std::chrono::duration<double>(end_LCP - start_LCP).count();
   PRINT_VAR(LCP_time);
 
-  double force_from_phi = kkt_multipliers.array().sum();
   double force_phi_from_A = 0;
   double force_phi_from_B = 0;
 
@@ -230,39 +181,12 @@ CalcContactSpatialForceBetweenMeshes(
       F_Pio_W_query_direction.translational() += kkt_multipliers(i) * n_AtoB_W;
     }
   }
-  PRINT_VAR(force_from_phi);
-  PRINT_VAR(force_phi_from_A);
-  PRINT_VAR(force_phi_from_B);
 
-  double F_Pi_norm_combined_normal = (F_Pio_W_combined_normal.translational()).norm();
-  double F_Pi_norm_query = (F_Pio_W_query_direction.translational()).norm();
-
-  std::cout << "Sum up Pi to get the force in the direction of combined surface normal: " << std::endl;
-  PRINT_VAR(F_Pio_W_combined_normal.translational());
-  PRINT_VAR(F_Pi_norm_combined_normal);
-  std::cout << "Sum up Pi to get the force with in direction of the query: " << std::endl;
-  PRINT_VAR(F_Pio_W_query_direction.translational());
-  PRINT_VAR(F_Pi_norm_query);
-  
-  
-
-  // Estimate pressure from KKT multipliers.
-  // Integrate pressure to get the spatial force.
-  // CODE FOR INTEGRATING FORCES HERE.
-
-
-//  VectorX<double> phi_deformation = H * C * H_trans * kkt_multipliers;
   VectorX<double> phi_deformation = H * C_times_area_inv * H_trans * kkt_multipliers;
-
-
-// TODO: (mengyao) modify it later
-
-//  VectorX<double> pressure = H_trans * kkt_multipliers;
   VectorX<double> pressure = area_matrix_inv.asDiagonal() * H_trans * kkt_multipliers;
-
   VectorX<double> u_deformation = C * pressure;
 
-
+#if 0
   VectorX<double> phi = phi0 + phi_deformation;
   std::ofstream phi_file("phi_distance_object_contact.txt");
   phi_file << "phi, phi0, phi_deformation, ratio phi / phi0" << std::endl;
@@ -274,13 +198,7 @@ CalcContactSpatialForceBetweenMeshes(
                             fabs(phi(i) / phi0(i)));
   }
   phi_file.close();
-
-
-
-//  PRINT_VAR(phi_deformation.rows());
-//  PRINT_VAR((C * phi_deformation).rows());
-//  PRINT_VAR(C.rows());
-//  PRINT_VAR(C.cols());
+#endif
 
 
   SpatialForce<double> F_Ao_W;
@@ -290,7 +208,6 @@ CalcContactSpatialForceBetweenMeshes(
 
 
   (void) press_in;
-
 
   // When kkt multipliers are forces:
   VectorX<double> force_on_nodes = H_trans * kkt_multipliers;
@@ -311,17 +228,6 @@ CalcContactSpatialForceBetweenMeshes(
     F_Bo_W.translational() += force_on_nodes(num_nodes_A + i)
         * Eigen::Vector3d::UnitZ();
   }
-
-
-
-
-
-
-
-
-
-
-
 
   // I am done using the patches.
   std::unique_ptr<BoussinesqContactModelResults<double>> boussinesq_results =
@@ -346,15 +252,6 @@ CalcContactSpatialForceBetweenMeshes(
   boussinesq_results->phi0 = phi0;
   boussinesq_results->phi_u = phi_deformation;
   boussinesq_results->H = H;
-
-
-  PRINT_VAR(F_Ao_W.translational());
-  PRINT_VAR(F_Bo_W.translational());
-  std::cout << std::endl;
-
-
-
-//  boussinesq_results->kkt_multipliers = kkt_multipliers;
   boussinesq_results->kkt_multipliers = kkt_multipliers;
 
   return std::move(boussinesq_results);
