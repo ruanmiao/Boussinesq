@@ -29,11 +29,16 @@ Eigen::MatrixXd CalcJacobianHMatrix(
   Eigen::MatrixXd jacobian_H_matrix =
       MatrixX<double>::Zero(num_queries, num_nodes);
 
-  double young_modulus_star = 1 /
-      (1 / young_modulus_star_A + 1 / young_modulus_star_B);
+//  double young_modulus_star = 1 /
+//      (1 / young_modulus_star_A + 1 / young_modulus_star_B);
 
-  double ratio_A = (1/young_modulus_star_A) / (1/young_modulus_star);
-  double ratio_B = (1/young_modulus_star_B) / (1/young_modulus_star);
+//  double ratio_A = (1/young_modulus_star_A) / (1/young_modulus_star);
+//  double ratio_B = (1/young_modulus_star_B) / (1/young_modulus_star);
+
+  double ratio_A = young_modulus_star_A
+      / (young_modulus_star_A + young_modulus_star_B);
+  double ratio_B = young_modulus_star_B
+      / (young_modulus_star_A + young_modulus_star_B);
 
 
   for (int i_query = 0; i_query < num_queries; ++i_query) {
@@ -57,6 +62,17 @@ Eigen::MatrixXd CalcJacobianHMatrix(
     }
     Vector3<double> n_AtoB_W = p_AtoB_W / p_AtoB_W.norm();
 
+    (void) ratio_A;
+    (void) ratio_B;
+
+//    Vector3<double> n_combined_B = (query.normal_B_W - query.normal_A_W) / 2.0;
+//    Vector3<double> n_combined_A = (-query.normal_B_W + query.normal_A_W) / 2.0;
+
+    Vector3<double> n_combined_B = n_AtoB_W;
+    Vector3<double> n_combined_A = -n_AtoB_W;
+
+
+
     MatrixX<double> S_A = MatrixX<double>::Zero(1, num_nodes);
     MatrixX<double> S_B = MatrixX<double>::Zero(1, num_nodes);
 
@@ -79,37 +95,13 @@ Eigen::MatrixXd CalcJacobianHMatrix(
       }
     }
 
-    (void) ratio_A;
-    (void) ratio_B;
-
-    Vector3<double> n_combined_B = (query.normal_B_W - query.normal_A_W) / 2.0;
-    Vector3<double> n_combined_A = (-query.normal_B_W + query.normal_A_W) / 2.0;
-
     jacobian_H_matrix.row(i_query) = -((n_AtoB_W.dot(n_combined_B) * S_B -
         n_AtoB_W.dot(n_combined_A) * S_A));
 
 //    jacobian_H_matrix.row(i_query) = -((n_AtoB_W.dot(query.normal_B_W) * S_B -
 //        n_AtoB_W.dot(query.normal_A_W) * S_A));
 
-
   }
-
-
-
-//  for (int i_node = 0; i_node < jacobian_H_matrix.cols(); i_node++) {
-//    int count = 0;
-//    for (int i_row = 0; i_row < jacobian_H_matrix.rows(); i_row++) {
-//      if(fabs(jacobian_H_matrix(i_row, i_node)) > std::numeric_limits<double>::infinity()) {
-//        count++;
-//      }
-//    }
-//    if (count > 0) {
-//      jacobian_H_matrix.col(i_node) = jacobian_H_matrix.col(i_node) / (count * 1.0);
-//    }
-//  }
-
-
-
 
   return jacobian_H_matrix;
 }

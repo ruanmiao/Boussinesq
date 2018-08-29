@@ -17,6 +17,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <chrono>
+#include <utility>
+#include <memory>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
@@ -59,19 +62,27 @@ int SolveCaTimesF() {
 
   // Load mesh for a sphere.
   const bool flip_normals = true;
+//  std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
+//      "drake/multibody/boussinesq_solver/test/Mesh_1/sphere.obj", flip_normals);
+//  sphere->mesh_index = 0;
+//
+//  std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
+//      "drake/multibody/boussinesq_solver/test/Mesh_1/plane.obj", flip_normals);
+//  plane->mesh_index = 1;
+
+
   std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
-      "drake/multibody/boussinesq_solver/test/Mesh_4/sphere.obj", flip_normals);
+      "drake/multibody/boussinesq_solver/test/Caf/Mesh_1/sphere.obj", flip_normals);
   sphere->mesh_index = 0;
 
   std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
-      "drake/multibody/boussinesq_solver/test/Mesh_4/plane.obj", flip_normals);
+      "drake/multibody/boussinesq_solver/test/Caf/Mesh_1/plane.obj", flip_normals);
   plane->mesh_index = 1;
 
 
   const double radius = 1;
-  const double penetration = 0.1;
+  const double penetration = 0.0225;
   const double z_WSo = radius - penetration;
-  const double sigma = 0.1;
 
   const double young_modulus_star_sphere = 1.0;
   const double young_modulus_star_plane = 1.0;
@@ -100,14 +111,22 @@ int SolveCaTimesF() {
       std::make_unique<std::vector<PenetrationAsTrianglePair<double>>>();
   std::vector<PenetrationAsTrianglePair<double>>& results = *owned_results;
 
+  const double sigma = 0.1;
 
   results =
       geometry::mesh_query::MeshToMeshQuery(X_WSphere, *sphere, X_WPlane, *plane, sigma);
 
   auto patches =
       geometry::mesh_query::MakeLocalPatchMeshes(&results, *sphere, *plane);
-  std::unique_ptr<Mesh<double>> object_A_patch = std::move(patches.first);
-  std::unique_ptr<Mesh<double>> object_B_patch = std::move(patches.second);
+
+  (void) patches;
+  std::unique_ptr<Mesh<double>> object_A_patch = std::move(sphere);
+  std::unique_ptr<Mesh<double>> object_B_patch = std::move(plane);
+
+//  (void) sigma;
+//  std::unique_ptr<Mesh<double>> object_A_patch = std::move(sphere);
+//  std::unique_ptr<Mesh<double>> object_B_patch = std::move(plane);
+
 
   const int num_nodes_A = object_A_patch->points_G.size();
   const int num_nodes_B = object_B_patch->points_G.size();
@@ -115,6 +134,8 @@ int SolveCaTimesF() {
 
   PRINT_VAR(num_nodes_A);
   PRINT_VAR(num_nodes_B);
+
+
 
 
   // Use LCP to solve the deformation and the pressure, and force
@@ -175,30 +196,42 @@ int SolveCaTimesF() {
   double ratio_A = 1.0;
   double ratio_B = 1.0;
 
-
-//  double ratio_A = (1/young_modulus_star_sphere) / (1/young_modulus_star);
-//  double ratio_B = (1/young_modulus_star_plane) / (1/young_modulus_star);
-
-//  (void) ratio_A;
-//  (void) ratio_B;
-
   VectorX<double> h0_A_ratio_normal_to_plane = h0_A_normal_to_plane * ratio_A;
   VectorX<double> h0_B_ratio_normal_to_plane = h0_B_normal_to_plane * ratio_B;
 
   //Result by solving h0 + Ca * f with LCP, with h0 defined by Hook's law
   solvers::MobyLCPSolver<double> moby_LCP_solver;
-  VectorX<double> force_sol_A(num_nodes_A);
-  VectorX<double> force_sol_B(num_nodes_B);
+  VectorX<double> force_sol_A_test1(num_nodes_A);
+  VectorX<double> force_sol_B_test1(num_nodes_B);
 
   bool solved = moby_LCP_solver.SolveLcpLemke(
-      Ca_A, h0_A_ratio_normal_to_plane, &force_sol_A);
-  DRAKE_DEMAND(solved);
-  solved = moby_LCP_solver.SolveLcpLemke(
-      Ca_B, h0_B_ratio_normal_to_plane, &force_sol_B);
+      Ca_A, h0_A_ratio_normal_to_plane, &force_sol_A_test1);
   DRAKE_DEMAND(solved);
 
-  double force_A_test1 = force_sol_A.sum();
-  double force_B_test1 = force_sol_B.sum();
+//  const clock::time_point start_LCP = clock::now();
+  solved = moby_LCP_solver.SolveLcpLemke(
+      Ca_B, h0_B_ratio_normal_to_plane, &force_sol_B_test1);
+
+//  const clock::time_point end_LCP = clock::now();
+//  double LCP_time = std::chrono::duration<double>(end_LCP
+//                                                           - start_LCP).count();
+//  PRINT_VAR(LCP_time);
+  DRAKE_DEMAND(solved);
+
+  double force_A_test1 = force_sol_A_test1.sum();
+  double force_B_test1 = force_sol_B_test1.sum();
+
+  VectorX<double> pressure_patch_A_uz;
+  VectorX<double> deformation_patch_A_uz;
+
+  VectorX<double> pressure_patch_B_uz;
+  VectorX<double> deformation_patch_B_uz;
+
+  pressure_patch_A_uz = area_inv_A.asDiagonal() * force_sol_A_test1;
+  deformation_patch_A_uz = Ca_A * force_sol_A_test1;
+
+  pressure_patch_B_uz = area_inv_B.asDiagonal() * force_sol_B_test1;
+  deformation_patch_B_uz = Ca_B * force_sol_B_test1;
 
   std::cout
       << "Test1: Result by solving h0 + Ca * f with LCP, with h0 defined by the "
@@ -211,7 +244,14 @@ int SolveCaTimesF() {
 
 
 
+
+
+
+
   // Test 2. h0 defined be the distance between the 2 surfaces in the radius direction
+  VectorX<double> force_sol_A_test2(num_nodes_A);
+  VectorX<double> force_sol_B_test2(num_nodes_B);
+
   VectorX<double> h0_A_normal_to_sphere(num_nodes_A);
   for (int i_gap = 0; i_gap < num_nodes_A; i_gap++) {
     const Vector3d pos = X_WSphere * object_A_patch->points_G.at(i_gap);
@@ -234,14 +274,26 @@ int SolveCaTimesF() {
   //Results by solving h0 + Cp with LCP, with h0 defined by Hook's law
 
   solved = moby_LCP_solver.SolveLcpLemke(
-      Ca_A, h0_A_ratio_normal_to_sphere, &force_sol_A);
+      Ca_A, h0_A_ratio_normal_to_sphere, &force_sol_A_test2);
   DRAKE_DEMAND(solved);
   solved = moby_LCP_solver.SolveLcpLemke(
-      Ca_B, h0_B_ratio_normal_to_sphere, &force_sol_B);
+      Ca_B, h0_B_ratio_normal_to_sphere, &force_sol_B_test2);
   DRAKE_DEMAND(solved);
 
-  double force_A_test2 = force_sol_A.sum();
-  double force_B_test2 = force_sol_B.sum();
+  double force_A_test2 = force_sol_A_test2.sum();
+  double force_B_test2 = force_sol_B_test2.sum();
+
+  VectorX<double> pressure_patch_A_ur;
+  VectorX<double> deformation_patch_A_ur;
+
+  VectorX<double> pressure_patch_B_ur;
+  VectorX<double> deformation_patch_B_ur;
+
+  pressure_patch_A_ur = area_inv_A.asDiagonal() * force_sol_A_test1;
+  deformation_patch_A_ur = Ca_A * force_sol_A_test1;
+
+  pressure_patch_B_ur = area_inv_B.asDiagonal() * force_sol_B_test1;
+  deformation_patch_B_ur = Ca_B * force_sol_B_test1;
 
   std::cout
       << "Test2: Result by solving h0 + Ca * f with LCP, with h0 defined by the "
@@ -252,15 +304,52 @@ int SolveCaTimesF() {
   PRINT_VAR(force_B_test2);
   std::cout << std::endl;
 
+  auto MakeDeformationVectorField = [](const Mesh<double>& patch, const VectorX<double> u_normal) {
+    std::vector<Vector3<double>> u;
+    for (int i = 0; i < u_normal.size(); ++i) {
+      u.push_back(-patch.node_normals_G[i] * u_normal[i]);
+    }
+    return u;
+  };
 
 
 
-//  std::ofstream data_file("compliance_sphere.txt");
-//
-//  data_file << "Test1: solve h0 + Ca * f with LCP, with h0 defined by the "
-//            << "distance between the two surfaces in the z-axis direction normal "
-//            << "to the plane."
-//            << std::endl;
+  std::ofstream patch_file("sphere_patch_wo_H.vtk");
+  OutputMeshToVTK(patch_file, object_A_patch->points_G, object_A_patch->triangles, X_WSphere);
+  patch_file << "POINT_DATA " << num_nodes_A << std::endl;
+  AppendNodeCenteredVectorFieldToVTK(
+      patch_file, "normals", object_A_patch->node_normals_G, X_WSphere);
+  AppendNodeCenteredScalarFieldToVTK(patch_file, "deformation_uz", deformation_patch_A_uz);
+  AppendNodeCenteredScalarFieldToVTK(patch_file, "normal_stress_uz", pressure_patch_A_uz);
+  AppendNodeCenteredScalarFieldToVTK(patch_file, "deformation_ur", deformation_patch_A_ur);
+  AppendNodeCenteredScalarFieldToVTK(patch_file, "normal_stress_ur", pressure_patch_A_ur);
+  auto u_A = MakeDeformationVectorField(
+      *object_A_patch, deformation_patch_A_uz);
+  AppendNodeCenteredVectorFieldToVTK(patch_file, "u", u_A, X_WSphere);
+  patch_file.close();
+  patch_file.close();
+
+  patch_file.open("plane_patch_wo_H.vtk", std::ios::out);
+  OutputMeshToVTK(patch_file, object_B_patch->points_G, object_B_patch->triangles, X_WPlane);
+  patch_file << "POINT_DATA " << num_nodes_B << std::endl;
+  AppendNodeCenteredVectorFieldToVTK(
+      patch_file, "normals", object_B_patch->node_normals_G, X_WPlane);
+  AppendNodeCenteredScalarFieldToVTK(patch_file, "deformation_uz", deformation_patch_B_uz);
+  AppendNodeCenteredScalarFieldToVTK(patch_file, "normal_stress_uz", pressure_patch_B_uz);
+  AppendNodeCenteredScalarFieldToVTK(patch_file, "deformation_ur", deformation_patch_B_ur);
+  AppendNodeCenteredScalarFieldToVTK(patch_file, "normal_stress_ur", pressure_patch_B_ur);
+  auto u_B = MakeDeformationVectorField(
+      *object_B_patch, deformation_patch_B_uz);
+  AppendNodeCenteredVectorFieldToVTK(patch_file, "u", u_B, X_WPlane);
+  patch_file.close();
+
+
+
+
+
+
+
+
 
   return 0;
 

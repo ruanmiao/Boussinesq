@@ -189,17 +189,62 @@ CalcContactSpatialForceBetweenMeshes(
   double force_phi_from_A = 0;
   double force_phi_from_B = 0;
 
+  SpatialForce<double> F_Pio_W_combined_normal;
+  F_Pio_W_combined_normal.SetZero();
+  SpatialForce<double> F_Pio_W_query_direction;
+  F_Pio_W_query_direction.SetZero();
+
+  double ratio_A = young_modulus_star_A
+      / (young_modulus_star_A + young_modulus_star_B);
+  double ratio_B = young_modulus_star_B
+      / (young_modulus_star_A + young_modulus_star_B);
+
+
   for (int i = 0; i < kkt_multipliers.rows(); i++) {
     if(results[i].meshA_index == object_A_patch->mesh_index) {
       force_phi_from_A += kkt_multipliers(i);
+
+      Vector3d n_combined = results[i].normal_B_W * ratio_B -
+          results[i].normal_A_W * ratio_A;
+      F_Pio_W_combined_normal.translational() += kkt_multipliers(i) * n_combined;
+
+      Vector3d p_AtoB_W = results[i].p_WoBs_W - results[i].p_WoAs_W;
+      if(fabs(p_AtoB_W.norm()) < std::numeric_limits<double>::epsilon()) {
+        continue;
+      }
+      Vector3<double> n_AtoB_W = p_AtoB_W / p_AtoB_W.norm();
+      F_Pio_W_query_direction.translational() += kkt_multipliers(i) * n_AtoB_W;
     }
     else {
       force_phi_from_B += kkt_multipliers(i);
+
+      Vector3d n_combined = results[i].normal_A_W * ratio_B -
+          results[i].normal_B_W * ratio_A;
+      F_Pio_W_combined_normal.translational() += kkt_multipliers(i) * n_combined;
+
+      Vector3d p_AtoB_W = results[i].p_WoAs_W - results[i].p_WoBs_W;
+      if(fabs(p_AtoB_W.norm()) < std::numeric_limits<double>::epsilon()) {
+        continue;
+      }
+      Vector3<double> n_AtoB_W = p_AtoB_W / p_AtoB_W.norm();
+      F_Pio_W_query_direction.translational() += kkt_multipliers(i) * n_AtoB_W;
     }
   }
   PRINT_VAR(force_from_phi);
   PRINT_VAR(force_phi_from_A);
   PRINT_VAR(force_phi_from_B);
+
+  double F_Pi_norm_combined_normal = (F_Pio_W_combined_normal.translational()).norm();
+  double F_Pi_norm_query = (F_Pio_W_query_direction.translational()).norm();
+
+  std::cout << "Sum up Pi to get the force in the direction of combined surface normal: " << std::endl;
+  PRINT_VAR(F_Pio_W_combined_normal.translational());
+  PRINT_VAR(F_Pi_norm_combined_normal);
+  std::cout << "Sum up Pi to get the force with in direction of the query: " << std::endl;
+  PRINT_VAR(F_Pio_W_query_direction.translational());
+  PRINT_VAR(F_Pi_norm_query);
+  
+  
 
   // Estimate pressure from KKT multipliers.
   // Integrate pressure to get the spatial force.
@@ -232,15 +277,6 @@ CalcContactSpatialForceBetweenMeshes(
 
 
 
-
-//  for (int i = 0; i < pressure.rows(); i++) {
-//    if(pressure(i) > 0.0) {
-//      pressure(i) = 0.0;
-//    }
-//  }
-
-
-
 //  PRINT_VAR(phi_deformation.rows());
 //  PRINT_VAR((C * phi_deformation).rows());
 //  PRINT_VAR(C.rows());
@@ -254,29 +290,6 @@ CalcContactSpatialForceBetweenMeshes(
 
 
   (void) press_in;
-
-//  for (int i = 0; i < num_nodes_A; ++i) {
-//
-//    // TODO: (mengyao: to be clean-up)
-//    double area = object_A_patch->node_areas[i];
-//
-//    F_Ao_W.translational() += pressure(i) * area
-//        * object_A_patch->node_normals_G[i];
-//
-////    F_Ao_W.translational() += pressure(i) * area
-////        * (-Vector3d::UnitZ());
-//  }
-//
-//  for (int i = 0; i < num_nodes_B; ++i) {
-//
-//    // TODO: (mengyao: to be clean-up)
-//    double area = object_B_patch->node_areas[i];
-//    F_Bo_W.translational() += pressure(num_nodes_A + i) * area
-//        * object_B_patch->node_normals_G[i];
-//  }
-
-
-
 
 
   // When kkt multipliers are forces:
@@ -316,6 +329,7 @@ CalcContactSpatialForceBetweenMeshes(
 
   boussinesq_results->F_Ao_W = F_Ao_W;
   boussinesq_results->F_Bo_W = F_Bo_W;
+  boussinesq_results->F_Pio_W_combined_normal = F_Pio_W_combined_normal;
   boussinesq_results->object_A_patch = std::move(object_A_patch);  // now object_A_patch is nullptr.
   boussinesq_results->object_B_patch = std::move(object_B_patch);
 
@@ -767,11 +781,6 @@ CalcContactSpatialForceBetweenMeshesByPressure(
 
   return std::move(boussinesq_results);
 }
-
-
-
-
-
 
 
 
