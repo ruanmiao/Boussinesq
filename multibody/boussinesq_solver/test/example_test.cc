@@ -48,15 +48,7 @@ int RunSpherePlaneModel(
     double young_modulus_star_sphere,
     double young_modulus_star_plane) {
 
-  // Load mesh, strip and curved strip.
-//  const bool flip_normals = false;
-//  std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
-//      "drake/multibody/boussinesq_solver/test/Mesh_4/strip_curved.obj", flip_normals);
-//  sphere->mesh_index = 0;
-//
-//  std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
-//      "drake/multibody/boussinesq_solver/test/Mesh_4/strip.obj", flip_normals);
-//  plane->mesh_index = 1;
+  // NOTE: Only run meshes 1-4. The rest are garbage.
 
   // Load mesh for a sphere.
   const bool flip_normals = true;
@@ -67,20 +59,6 @@ int RunSpherePlaneModel(
   std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
       "drake/multibody/boussinesq_solver/test/Mesh_1/plane.obj", flip_normals);
   plane->mesh_index = 1;
-
-
-
-
-  // Flip the two meshes
-// const bool flip_normals = true;
-//  std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
-//      "drake/multibody/boussinesq_solver/test/Mesh_3/sphere.obj", flip_normals);
-//  plane->mesh_index = 0;
-//
-//  std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
-//      "drake/multibody/boussinesq_solver/test/Mesh_3/plane.obj", flip_normals);
-//  sphere->mesh_index = 1;
-
 
   const double radius = 1;
   const double z_WSo = radius - penetration;
@@ -97,39 +75,12 @@ int RunSpherePlaneModel(
   Isometry3d X_WPlane{Translation3d{Vector3d(0, 0, 0.0)}};
   X_WPlane.linear() = MatrixX<double>::Identity(3, 3);
 
-
-  // Flip the two mesh, now X_WPlane is for Object B, which is now the spere.
-//  Isometry3d X_WPlane{Translation3d{Vector3d(0, 0, z_WSo)}};
-//  X_WPlane.linear() = MatrixX<double>::Identity(3, 3);
-//
-//  // The top of the plane is placed at z = 0
-//  Isometry3d X_WSphere{Translation3d{Vector3d(0, 0, 0.0)}};
-//  X_WSphere.linear() = MatrixX<double>::Identity(3, 3);
-
-
-
   std::unique_ptr<BoussinesqContactModelResults<double>>
       boussinesq_results_by_force =
       CalcContactSpatialForceBetweenMeshes(
           *sphere, X_WSphere, young_modulus_star_sphere,
           *plane, X_WPlane, young_modulus_star_plane,
           sigma);
-
-
-
-//  std::unique_ptr<BoussinesqContactModelResults<double>>
-//      boussinesq_results_by_pressure =
-//      CalcContactSpatialForceBetweenMeshesByPressure(
-//          *sphere, X_WSphere, young_modulus_star_sphere,
-//          *plane, X_WPlane, young_modulus_star_plane,
-//          sigma);
-
-
-//  Vector3<double> FA_by_force = boussinesq_results_by_force->F_Ao_W.translational();
-//  Vector3<double> FB_by_force = boussinesq_results_by_force->F_Bo_W.translational();
-
-//  Vector3<double> FA_by_pressure = boussinesq_results_by_pressure->F_Ao_W.translational();
-//  Vector3<double> FB_by_pressure = boussinesq_results_by_pressure->F_Bo_W.translational();
 
   double young_modulus_star = 1.0 /
       (1.0 / young_modulus_star_sphere + 1.0 / young_modulus_star_plane);
@@ -178,9 +129,7 @@ int RunSpherePlaneModel(
   AppendNodeCenteredVectorFieldToVTK(patch_file, "u", u_B, X_WPlane);
   patch_file.close();
 
-
-
-// Deformation by kkt
+  // Compute some statistics and print them out to the std::out
   double max_uA_from_phi = 0;
   for (int i = 0; i < num_nodes_A; i++) {
     double u = u_A[i](2);
@@ -193,18 +142,8 @@ int RunSpherePlaneModel(
     if (-u > max_uB_from_phi)
       max_uB_from_phi = -u;
   }
-
   PRINT_VAR(max_uA_from_phi);
   PRINT_VAR(max_uB_from_phi);
-
-
-
-
-
-
-
-
-
 
   const auto& results = *boussinesq_results_by_force->contact_results;
   std::vector<Vector3d> pointsA(results.size());
@@ -243,70 +182,13 @@ int RunSpherePlaneModel(
   file << "POINT_DATA " << kkt_twice.rows() << std::endl;
   AppendNodeCenteredScalarFieldToVTK(file, "kkt_multipliers", kkt_twice);
   AppendNodeCenteredScalarFieldToVTK(file, "phi0", phi0_twice);
-  AppendNodeCenteredScalarFieldToVTK(file, "phi_u", phi_u_twice);
-  AppendNodeCenteredScalarFieldToVTK(file, "phi", phi_twice);
+  AppendNodeCenteredScalarFieldToVTK(file, "phi_u", phi_u_twice);  // phi_u = W*pi
+  AppendNodeCenteredScalarFieldToVTK(file, "phi", phi_twice);      // phi_u = phi0 + W*pi = phi0 + phi_u
   file.close();
 
-
-
-
-
   PRINT_VAR(force_Hertz);
-
-
   return 0;
 }
-
-
-
-
-GTEST_TEST(ExampleTest, ComplianceWithAreaInv) {
-//  const bool flip_normals = true;
-
-//  // Load mesh for a sphere.
-//  std::unique_ptr<Mesh<double>> sphere = LoadMeshFromObj(
-//      "drake/multibody/boussinesq_solver/test/Mesh_3/sphere.obj", flip_normals);
-//  sphere->mesh_index = 0;
-//
-//  std::unique_ptr<Mesh<double>> plane = LoadMeshFromObj(
-//      "drake/multibody/boussinesq_solver/test/Mesh_3/plane.obj", flip_normals);
-//  plane->mesh_index = 1;
-//
-//  const double young_modulus_star_A = 10000000.0;
-//  const double young_modulus_star_B = 1.0;
-//  double z_WSo = 0.9;
-//  double sigma = 0.1;
-//
-//  Isometry3d X_WSphere{Translation3d{Vector3d(0, 0, z_WSo)}};
-//  X_WSphere.linear() = MatrixX<double>::Identity(3, 3);
-//
-//  // The top of the plane is placed at z = 0
-//  Isometry3d X_WPlane{Translation3d{Vector3d(0, 0, 0.0)}};
-//  X_WPlane.linear() = MatrixX<double>::Identity(3, 3);
-
-//  auto owned_results =
-//      std::make_unique<std::vector<PenetrationAsTrianglePair<double>>>();
-//  std::vector<PenetrationAsTrianglePair<double>>& results = *owned_results;
-//
-//
-//  results =
-//      geometry::mesh_query::MeshToMeshQuery(X_WSphere, *sphere, X_WPlane, *plane, sigma);
-//
-//  auto patches =
-//      geometry::mesh_query::MakeLocalPatchMeshes(&results, *sphere, *plane);
-//  std::unique_ptr<Mesh<double>> object_A_patch = std::move(patches.first);
-//  std::unique_ptr<Mesh<double>> object_B_patch = std::move(patches.second);
-//
-//  SolveCaTimesF(object_A_patch->points_G, object_B_patch->points_G,
-//                object_A_patch->triangles, object_B_patch->triangles,
-//                object_A_patch->node_areas, object_B_patch->node_areas,
-//                X_WSphere, X_WPlane,
-//                young_modulus_star_A, young_modulus_star_B);
-
-}
-
-
-
 
 GTEST_TEST(ExampleTest, SpherePlane) {
 
@@ -317,7 +199,6 @@ GTEST_TEST(ExampleTest, SpherePlane) {
 //  std::vector<double> vec_young_modulus_star_plane{1, 1000, 1};
   std::vector<double> vec_young_modulus_star_sphere{1.0};
   std::vector<double> vec_young_modulus_star_plane{1000.0};
-
 
   int num_indentations = indentations.size();
   int num_youngs = vec_young_modulus_star_plane.size();
@@ -342,7 +223,7 @@ GTEST_TEST(ExampleTest, SpherePlane) {
                 << " -------------------------"
                 << std::endl;
 
-      RunSpherePlaneModel(indentation, 0.1,
+      RunSpherePlaneModel(indentation, 0.1 /* sigma */,
                           young_modulus_star_sphere, young_modulus_star_plane);
     }
 
