@@ -1,2 +1,0 @@
-Result solved when kkt-multiplier is force: 
-0.00000000, 0.00000000, -0.02623650
