@@ -37,8 +37,7 @@ CalcContactSpatialForceBetweenMeshes(
     const Mesh<double>& object_B,
     const Isometry3d& X_WB,
     const double young_modulus_star_B,
-    double sigma,
-    bool press_in) {
+    double sigma) {
   auto owned_results =
       std::make_unique<std::vector<PenetrationAsTrianglePair<double>>>();
   std::vector<PenetrationAsTrianglePair<double>>& results = *owned_results;
@@ -129,6 +128,7 @@ CalcContactSpatialForceBetweenMeshes(
   }
   VectorX<double> kkt_multipliers(num_phis);
 
+  // Solve QP problem as an LCP (expensive solution).
   const clock::time_point start_LCP = clock::now();
   solvers::MobyLCPSolver<double> moby_LCP_solver;
   const bool solved = moby_LCP_solver.SolveLcpLemke(W, phi0, &kkt_multipliers);
@@ -137,68 +137,9 @@ CalcContactSpatialForceBetweenMeshes(
   double LCP_time = std::chrono::duration<double>(end_LCP - start_LCP).count();
   PRINT_VAR(LCP_time);
 
-  double force_phi_from_A = 0;
-  double force_phi_from_B = 0;
-
-  SpatialForce<double> F_Pio_W_combined_normal;
-  F_Pio_W_combined_normal.SetZero();
-  SpatialForce<double> F_Pio_W_query_direction;
-  F_Pio_W_query_direction.SetZero();
-
-  double ratio_A = young_modulus_star_A
-      / (young_modulus_star_A + young_modulus_star_B);
-  double ratio_B = young_modulus_star_B
-      / (young_modulus_star_A + young_modulus_star_B);
-
-
-  for (int i = 0; i < kkt_multipliers.rows(); i++) {
-    if(results[i].meshA_index == object_A_patch->mesh_index) {
-      force_phi_from_A += kkt_multipliers(i);
-
-      Vector3d n_combined = results[i].normal_B_W * ratio_B -
-          results[i].normal_A_W * ratio_A;
-      F_Pio_W_combined_normal.translational() += kkt_multipliers(i) * n_combined;
-
-      Vector3d p_AtoB_W = results[i].p_WoBs_W - results[i].p_WoAs_W;
-      if(fabs(p_AtoB_W.norm()) < std::numeric_limits<double>::epsilon()) {
-        continue;
-      }
-      Vector3<double> n_AtoB_W = p_AtoB_W / p_AtoB_W.norm();
-      F_Pio_W_query_direction.translational() += kkt_multipliers(i) * n_AtoB_W;
-    }
-    else {
-      force_phi_from_B += kkt_multipliers(i);
-
-      Vector3d n_combined = results[i].normal_A_W * ratio_B -
-          results[i].normal_B_W * ratio_A;
-      F_Pio_W_combined_normal.translational() += kkt_multipliers(i) * n_combined;
-
-      Vector3d p_AtoB_W = results[i].p_WoAs_W - results[i].p_WoBs_W;
-      if(fabs(p_AtoB_W.norm()) < std::numeric_limits<double>::epsilon()) {
-        continue;
-      }
-      Vector3<double> n_AtoB_W = p_AtoB_W / p_AtoB_W.norm();
-      F_Pio_W_query_direction.translational() += kkt_multipliers(i) * n_AtoB_W;
-    }
-  }
-
   VectorX<double> phi_deformation = H * C_times_area_inv * H_trans * kkt_multipliers;
   VectorX<double> pressure = area_matrix_inv.asDiagonal() * H_trans * kkt_multipliers;
   VectorX<double> u_deformation = C * pressure;
-
-#if 0
-  VectorX<double> phi = phi0 + phi_deformation;
-  std::ofstream phi_file("phi_distance_object_contact.txt");
-  phi_file << "phi, phi0, phi_deformation, ratio phi / phi0" << std::endl;
-  for (int i = 0; i < phi.rows(); i++) {
-    phi_file << fmt::format("{:.8f}, {:.8f}, {:.8f}, {:.8f}\n",
-                            phi(i),
-                            phi0(i),
-                            phi_deformation(i),
-                            fabs(phi(i) / phi0(i)));
-  }
-  phi_file.close();
-#endif
 
 
   SpatialForce<double> F_Ao_W;
@@ -206,26 +147,48 @@ CalcContactSpatialForceBetweenMeshes(
   SpatialForce<double> F_Bo_W;
   F_Bo_W.SetZero();
 
+  // WEIGHTED NORMALS FORMULATION.
+#if 0
+  // Computation of forces directly from multipliers
+  auto sign = [](double x) {
+    // std::copysign(x, y):
+    //   Returns a value with the magnitude of x and the sign of y.
+    return std::copysign(1.0, x);
+  };
+  for (int k = 0; k < num_phis; ++k) {
+    const auto& query = results[k];
 
-  (void) press_in;
+    // Undeformed surface normals.
+    const auto& nA0_W = query.normal_A_W;
+    const auto& nB0_W = query.normal_B_W;
 
+    // Approximation to the deformed surface normal on A.
+    const Vector3<double> nA_W =
+        (young_modulus_star_B * nA0_W -
+         young_modulus_star_A * nB0_W).normalized();
+
+    Vector3<double> n_AtoB_W = (query.p_WoBs_W - query.p_WoAs_W).normalized();
+    const Vector3<double> that = -sign(query.signed_distance) * n_AtoB_W;
+
+    F_Ao_W.translational() += that.dot(nA_W) * kkt_multipliers(k) * nA_W;
+  }
+
+  // Since nB_W = -nA_W
+  F_Bo_W.translational() += -F_Ao_W.translational();
+#endif
+
+  // ORIGINAL FORMULATION using the normals on the undeformed surfaces.
   // When kkt multipliers are forces:
   VectorX<double> force_on_nodes = H_trans * kkt_multipliers;
 
   for (int i = 0; i < num_nodes_A; ++i) {
     F_Ao_W.translational() +=
         force_on_nodes(i) * object_A_patch->node_normals_G[i];
-
-    //F_Ao_W.translational() += force_on_nodes(i)
-    //    * Eigen::Vector3d::UnitZ();
   }
 
   for (int i = 0; i < num_nodes_B; ++i) {
     F_Bo_W.translational() +=
         force_on_nodes(num_nodes_A + i) * object_B_patch->node_normals_G[i];
-
-    //F_Bo_W.translational() += force_on_nodes(num_nodes_A + i)
-      //  * Eigen::Vector3d::UnitZ();
   }
 
   // I am done using the patches.
@@ -234,7 +197,6 @@ CalcContactSpatialForceBetweenMeshes(
 
   boussinesq_results->F_Ao_W = F_Ao_W;
   boussinesq_results->F_Bo_W = F_Bo_W;
-  boussinesq_results->F_Pio_W_combined_normal = F_Pio_W_combined_normal;
   boussinesq_results->object_A_patch = std::move(object_A_patch);  // now object_A_patch is nullptr.
   boussinesq_results->object_B_patch = std::move(object_B_patch);
 

@@ -37,10 +37,7 @@ CalcContactSpatialForceBetweenMeshes(
     const geometry::mesh_query::Mesh<double>& object_B,
     const Eigen::Isometry3d& X_WB,
     const double young_modulus_star_B,
-    double sigma,
-    bool press_in = true);
-
-
+    double sigma);
 
 std::unique_ptr<BoussinesqContactModelResults<double>>
 CalcContactSpatialForceBetweenMeshesByPressure(

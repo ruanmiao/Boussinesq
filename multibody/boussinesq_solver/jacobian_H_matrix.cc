@@ -29,15 +29,6 @@ Eigen::MatrixXd CalcJacobianHMatrix(
   Eigen::MatrixXd jacobian_H_matrix =
       MatrixX<double>::Zero(num_queries, num_nodes);
 
-  (void) young_modulus_star_A;
-  (void) young_modulus_star_B;
-#if 0
-  double ratio_A = young_modulus_star_A
-      / (young_modulus_star_A + young_modulus_star_B);
-  double ratio_B = young_modulus_star_B
-      / (young_modulus_star_A + young_modulus_star_B);
-#endif
-
   for (int i_query = 0; i_query < num_queries; ++i_query) {
     const PenetrationAsTrianglePair<double>& query = queries[i_query];
 
@@ -62,14 +53,6 @@ Eigen::MatrixXd CalcJacobianHMatrix(
 
     const Vector3<double> that = -sign(query.signed_distance) * n_AtoB_W;
 
-#if 0
-    (void) ratio_A;
-    (void) ratio_B;
-
-    Vector3<double> n_combined_B = n_AtoB_W;
-    Vector3<double> n_combined_A = -n_AtoB_W;
-#endif
-
     RowVectorX<double> S_A = RowVectorX<double>::Zero(num_nodes);
     RowVectorX<double> S_B = RowVectorX<double>::Zero(num_nodes);
 
@@ -85,15 +68,26 @@ Eigen::MatrixXd CalcJacobianHMatrix(
       S_B(nodeB_index) = query.barycentric_B[local_node];
     }
 
-    const auto& normalA_W = query.normal_A_W;
-    const auto& normalB_W = query.normal_B_W;
+    // The original normals on the underarmed surfaces.
+    const auto& normalA0_W = query.normal_A_W;
+    const auto& normalB0_W = query.normal_B_W;
 
+    // WEIGHTED NORMALS FORMULATION.
+    (void) young_modulus_star_A;
+    (void) young_modulus_star_B;
+#if 0
+    // Approximation of the normal on the deformed contact patch on body A side.
+    // The normal on B points in the opposite direction.
+    const Vector3<double> normalA_W =
+        (young_modulus_star_B * normalA0_W -
+         young_modulus_star_A * normalB0_W).normalized();
+        // Modified formulation using an approximate normal such that nB = -nA.
+    jacobian_H_matrix.row(i_query) = that.dot(normalA_W) * (S_A + S_B);
+#endif
+
+    // ORIGINAL FORMULATION using the undeformed surfaces's normals
     jacobian_H_matrix.row(i_query) =
-        that.dot(normalA_W) * S_A - that.dot(normalB_W) * S_B;
-
-    //jacobian_H_matrix.row(i_query) =
-      //  n_AtoB_W.dot(n_combined_A) * S_A - n_AtoB_W.dot(n_combined_B) * S_B;
-
+        that.dot(normalA0_W) * S_A - that.dot(normalB0_W) * S_B;
   }
 
   return jacobian_H_matrix;

@@ -73,8 +73,6 @@ std::unique_ptr<BoussinesqContactModelResults<double>> RunSpherePlaneModel(
   // Place sphere a "penetration" distance below z = 0.
   // Apply an arbirary rotation for testing.
   Isometry3d X_WSphere{Translation3d{Vector3d(0, 0, z_WSo)}};
-//  (void) z_WSo;
-//  Isometry3d X_WSphere{Translation3d{Vector3d(0, 0, 0)}};
   X_WSphere.linear() = MatrixX<double>::Identity(3, 3);
 
   // The top of the plane is placed at z = 0
