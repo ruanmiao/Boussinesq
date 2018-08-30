@@ -67,7 +67,7 @@ CalcContactSpatialForceBetweenMeshes(
   const MatrixX<double> H = CalcJacobianHMatrix(
       results, object_A_patch->points_G, object_B_patch->points_G,
       object_A_patch->mesh_index, object_B_patch->mesh_index,
-  young_modulus_star_A, young_modulus_star_B);
+      young_modulus_star_A, young_modulus_star_B);
 
   DRAKE_DEMAND(H.rows() == num_phis);
   DRAKE_DEMAND(H.cols() == num_nodes);

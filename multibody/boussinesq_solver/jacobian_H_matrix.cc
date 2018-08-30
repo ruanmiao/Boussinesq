@@ -29,12 +29,6 @@ Eigen::MatrixXd CalcJacobianHMatrix(
   Eigen::MatrixXd jacobian_H_matrix =
       MatrixX<double>::Zero(num_queries, num_nodes);
 
-//  double young_modulus_star = 1 /
-//      (1 / young_modulus_star_A + 1 / young_modulus_star_B);
-
-//  double ratio_A = (1/young_modulus_star_A) / (1/young_modulus_star);
-//  double ratio_B = (1/young_modulus_star_B) / (1/young_modulus_star);
-
   double ratio_A = young_modulus_star_A
       / (young_modulus_star_A + young_modulus_star_B);
   double ratio_B = young_modulus_star_B
@@ -45,11 +39,6 @@ Eigen::MatrixXd CalcJacobianHMatrix(
     const PenetrationAsTrianglePair<double>& query = queries[i_query];
 
     Vector3<double> p_AtoB_W = query.p_WoBs_W - query.p_WoAs_W;
-
-//    PRINT_VAR(query.meshA_index);
-//    PRINT_VAR(patch_A_index);
-//    PRINT_VAR(query.meshB_index);
-//    PRINT_VAR(patch_B_index);
 
     DRAKE_ASSERT(((query.meshA_index == patch_A_index) &&
         (query.meshB_index == patch_B_index)) ||
@@ -72,27 +61,19 @@ Eigen::MatrixXd CalcJacobianHMatrix(
     Vector3<double> n_combined_A = -n_AtoB_W;
 
 
+    RowVectorX<double> S_A = RowVectorX<double>::Zero(num_nodes);
+    RowVectorX<double> S_B = RowVectorX<double>::Zero(num_nodes);
 
-    MatrixX<double> S_A = MatrixX<double>::Zero(1, num_nodes);
-    MatrixX<double> S_B = MatrixX<double>::Zero(1, num_nodes);
-
-    // Check whether this query is A to B or B to A;
-    if (query.meshA_index == patch_A_index) {
-      for (int i_node = 0; i_node < query.triangleA.size(); i_node++) {
-        DRAKE_ASSERT(query.triangleA[i_node] < patch_A_size);
-        DRAKE_ASSERT(patch_A_size + query.triangleB[i_node] < num_nodes);
-
-        S_A(0, query.triangleA[i_node]) = query.barycentric_A[i_node];
-        S_B(0, patch_A_size + query.triangleB[i_node]) = query.barycentric_B[i_node];
-      }
-    } else {
-      for (int i_node = 0; i_node < query.triangleA.size(); i_node++) {
-        DRAKE_ASSERT(query.triangleB[i_node] < patch_A_size);
-        DRAKE_ASSERT(patch_A_size + query.triangleA[i_node] < num_nodes);
-
-        S_A(0, patch_A_size + query.triangleA[i_node]) = query.barycentric_A[i_node];
-        S_B(0, query.triangleB[i_node]) = query.barycentric_B[i_node];
-      }
+    const Vector2<int> mesh_start_index(0, patch_A_size);
+    for (int local_node = 0; local_node < 3; ++local_node) {
+      const int nodeA_index =
+          mesh_start_index[query.meshA_index] + query.triangleA[local_node];
+      const int nodeB_index =
+          mesh_start_index[query.meshB_index] + query.triangleB[local_node];
+      DRAKE_DEMAND(nodeA_index < num_nodes);
+      DRAKE_DEMAND(nodeB_index < num_nodes);
+      S_A(nodeA_index) = query.barycentric_A[local_node];
+      S_B(nodeB_index) = query.barycentric_B[local_node];
     }
 
     jacobian_H_matrix.row(i_query) = -((n_AtoB_W.dot(n_combined_B) * S_B -
