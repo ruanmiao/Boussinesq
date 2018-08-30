@@ -200,15 +200,18 @@ std::unique_ptr<BoussinesqContactModelResults<double>> RunSpherePlaneModel(
 
 GTEST_TEST(ExampleTest, SpherePlane) {
   std::vector<double> indentations{0.05};
-  std::vector<int> meshes{1, 2};
+  std::vector<int> meshes{1, 2, 3, 4};
+  std::vector<double> mesh_sizes{0.135, 0.09, 0.06, 0.04};
 
-  double young_modulus_star_sphere = 1.0;
-  double young_modulus_star_plane = 10000.0;
+  double young_modulus_star_sphere = 10000.0;
+  double young_modulus_star_plane = 1.0;
 
   PRINT_VAR(young_modulus_star_sphere);
   PRINT_VAR(young_modulus_star_plane);
 
   int num_indentations = indentations.size();
+
+  std::ofstream results_file("forces.dat");
 
   for (int indentation_index = 0;
        indentation_index < num_indentations; indentation_index++) {
@@ -246,12 +249,24 @@ GTEST_TEST(ExampleTest, SpherePlane) {
       PRINT_VAR(results->F_Ao_W);
       PRINT_VAR(results->F_Bo_W);
 
+      // We write:
+      // h Fsphere[1:3] Fplane[1:3]
+      results_file << fmt::format(
+          "{:.8f} "
+          "{:.8f} {:.8f} {:.8f} "
+          "{:.8f} {:.8f} {:.8f}\n",
+          mesh_sizes[mesh_index - 1],
+          results->F_Ao_W[3], results->F_Ao_W[4], results->F_Ao_W[5],
+          results->F_Bo_W[3], results->F_Bo_W[4], results->F_Bo_W[5]);
+
       std::cout << std::endl;
       std::cout << std::endl;
     }
 
     std::cout << std::endl;
   }
+
+  results_file.close();
 
 }
 
