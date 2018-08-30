@@ -29,11 +29,14 @@ Eigen::MatrixXd CalcJacobianHMatrix(
   Eigen::MatrixXd jacobian_H_matrix =
       MatrixX<double>::Zero(num_queries, num_nodes);
 
+  (void) young_modulus_star_A;
+  (void) young_modulus_star_B;
+#if 0
   double ratio_A = young_modulus_star_A
       / (young_modulus_star_A + young_modulus_star_B);
   double ratio_B = young_modulus_star_B
       / (young_modulus_star_A + young_modulus_star_B);
-
+#endif
 
   for (int i_query = 0; i_query < num_queries; ++i_query) {
     const PenetrationAsTrianglePair<double>& query = queries[i_query];
@@ -51,15 +54,21 @@ Eigen::MatrixXd CalcJacobianHMatrix(
     }
     Vector3<double> n_AtoB_W = p_AtoB_W / p_AtoB_W.norm();
 
+    auto sign = [](double x) {
+      // std::copysign(x, y):
+      //   Returns a value with the magnitude of x and the sign of y.
+      return std::copysign(1.0, x);
+    };
+
+    const Vector3<double> that = -sign(query.signed_distance) * n_AtoB_W;
+
+#if 0
     (void) ratio_A;
     (void) ratio_B;
 
-//    Vector3<double> n_combined_B = (query.normal_B_W - query.normal_A_W) / 2.0;
-//    Vector3<double> n_combined_A = (-query.normal_B_W + query.normal_A_W) / 2.0;
-
     Vector3<double> n_combined_B = n_AtoB_W;
     Vector3<double> n_combined_A = -n_AtoB_W;
-
+#endif
 
     RowVectorX<double> S_A = RowVectorX<double>::Zero(num_nodes);
     RowVectorX<double> S_B = RowVectorX<double>::Zero(num_nodes);
@@ -76,11 +85,14 @@ Eigen::MatrixXd CalcJacobianHMatrix(
       S_B(nodeB_index) = query.barycentric_B[local_node];
     }
 
-    jacobian_H_matrix.row(i_query) = -((n_AtoB_W.dot(n_combined_B) * S_B -
-        n_AtoB_W.dot(n_combined_A) * S_A));
+    const auto& normalA_W = query.normal_A_W;
+    const auto& normalB_W = query.normal_B_W;
 
-//    jacobian_H_matrix.row(i_query) = -((n_AtoB_W.dot(query.normal_B_W) * S_B -
-//        n_AtoB_W.dot(query.normal_A_W) * S_A));
+    jacobian_H_matrix.row(i_query) =
+        that.dot(normalA_W) * S_A - that.dot(normalB_W) * S_B;
+
+    //jacobian_H_matrix.row(i_query) =
+      //  n_AtoB_W.dot(n_combined_A) * S_A - n_AtoB_W.dot(n_combined_B) * S_B;
 
   }
 

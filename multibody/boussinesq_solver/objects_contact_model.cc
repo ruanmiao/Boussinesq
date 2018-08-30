@@ -213,20 +213,19 @@ CalcContactSpatialForceBetweenMeshes(
   VectorX<double> force_on_nodes = H_trans * kkt_multipliers;
 
   for (int i = 0; i < num_nodes_A; ++i) {
+    F_Ao_W.translational() +=
+        force_on_nodes(i) * object_A_patch->node_normals_G[i];
 
-//    F_Ao_W.translational() += force_on_nodes(i)
-//        * object_A_patch->node_normals_G[i];
-    F_Ao_W.translational() += force_on_nodes(i)
-        * Eigen::Vector3d::UnitZ();
+    //F_Ao_W.translational() += force_on_nodes(i)
+    //    * Eigen::Vector3d::UnitZ();
   }
 
   for (int i = 0; i < num_nodes_B; ++i) {
+    F_Bo_W.translational() +=
+        force_on_nodes(num_nodes_A + i) * object_B_patch->node_normals_G[i];
 
-//    F_Bo_W.translational() += force_on_nodes(num_nodes_A + i)
-//        * object_B_patch->node_normals_G[i];
-
-    F_Bo_W.translational() += force_on_nodes(num_nodes_A + i)
-        * Eigen::Vector3d::UnitZ();
+    //F_Bo_W.translational() += force_on_nodes(num_nodes_A + i)
+      //  * Eigen::Vector3d::UnitZ();
   }
 
   // I am done using the patches.
