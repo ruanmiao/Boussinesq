@@ -197,8 +197,8 @@ std::unique_ptr<BoussinesqContactModelResults<double>> RunSpherePlaneModel(
 }
 
 GTEST_TEST(ExampleTest, SpherePlane) {
-  std::vector<double> indentations{0.05};
-  std::vector<int> meshes{1, 2, 3, 4};
+  std::vector<double> indentations{0.01, 0.02, 0.03, 0.04, 0.05};
+  std::vector<int> meshes{2};
   std::vector<double> mesh_sizes{0.135, 0.09, 0.06, 0.04};
 
   double young_modulus_star_sphere = 10000.0;
@@ -252,10 +252,12 @@ GTEST_TEST(ExampleTest, SpherePlane) {
       results_file << fmt::format(
           "{:.8f} "
           "{:.8f} {:.8f} {:.8f} "
-          "{:.8f} {:.8f} {:.8f}\n",
+          "{:.8f} {:.8f} {:.8f} "
+          "{:.8f}\n",
           mesh_sizes[mesh_index - 1],
           results->F_Ao_W[3], results->F_Ao_W[4], results->F_Ao_W[5],
-          results->F_Bo_W[3], results->F_Bo_W[4], results->F_Bo_W[5]);
+          results->F_Bo_W[3], results->F_Bo_W[4], results->F_Bo_W[5],
+          indentation);
 
       std::cout << std::endl;
       std::cout << std::endl;
